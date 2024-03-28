@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br>
+
+<section class="vh-100 bg-image"
+  style="background-image: url('https://getwallpapers.com/wallpaper/full/1/0/f/101439.jpg');">
+  <div class="mask d-flex align-items-center h-100 gradient-custom-3">
+    <div class="container h-100">
+      <div class="row d-flex justify-content-center align-items-center h-100">
+        <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+          <div class="card" style="border-radius: 15px;">
+            <div class="card-body p-5">
+              <h2 class="text-uppercase text-center mb-5">Авторизация</h2>
+
+              <form action="" method="post">
+                {{ form.hidden_tag() }}
+
+                {% if message %}
+                    <div class="alert alert-primary">{{ message }}</div>
+                {% endif %}
+
+                <div class="form-outline mb-4">
+                <p>
+                    {{ form.email(class="form-control form-control-lg", type="email") }}
+                </p>
+                  <label class="form-label" for="form3Example3cg">Емаил</label>
+                </div>
+
+                <div class="form-outline mb-4">
+                  <p>
+                    {{ form.password(class="form-control form-control-lg", type="password")}}
+                    {% for error in form.password.errors %}
+                        <p class="alert alert-danger" role="alert">
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                  </p>
+                  <label class="form-label" for="form3Example4cg">Пароль</label>
+                </div>
+
+                <div class="form-check d-flex justify-content-center mb-5">
+                  {{ form.remember_me() }}
+                  <label class="form-check-label" for="form2Example3g">
+                    Запомнить меня
+                  </label>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                  <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+                </div>
+
+                <p class="text-center text-muted mt-5 mb-0">Новый пользователь? <a href="/register"
+                    class="fw-bold text-body"><u>Зарегистрируйтесь здесь</u></a></p>
+
+              </form>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

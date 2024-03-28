@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br>
+<div class='container'>
+   <div class="col-lg-6">
+     <fieldset class="border" >
+       <legend class ='text-center'><p class="user-select-none">Добрый день</p></legend>
+
+
+         <p id="innerPara" class="user-select-none">
+            Данный сайт был создан за 1 день, что очень мало для таких проектов.
+            Ниже вы видите прогресс по его завершению. Пока что здесь есть система 
+            аккаунтов, профиль и главная страница. Вы не можете выделить данный текст 
+            потому что я вам запретил. После прогресс бара будет отражена таблица 
+            активных пользователей, пока что их нет.
+       </p>
+ </fieldset>
+ </div>
+<br><br><br><br>
+
+<div class="progress" style="height: 20px;">
+  <div class="progress-bar" role="progressbar" style="width: 19%;" aria-valuenow="19" aria-valuemin="0" aria-valuemax="100">19%</div>
+</div>
+
+<br><br><br><br>
+<table class="table align-middle">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">17</th>
+      <th scope="col">26</th>
+      <th scope="col">29</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">17</th>
+      <td>289</td>
+      <td>442</td>
+      <td>493</td>
+    </tr>
+    <tr class="align-bottom">
+      <th scope="row">26</th>
+      <td>442</td>
+      <td>676</td>
+      <td>754</td>
+    </tr>
+    <tr>
+      <th scope="row">29</th>
+      <td>493</td>
+      <td>754</td>
+      <td>841</td>
+    </tr>
+  </tbody>
+</table>
+
+{% endblock %}

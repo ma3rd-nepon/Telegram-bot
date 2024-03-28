@@ -1,0 +1,45 @@
+h4 {
+    color: #999999;
+    padding-left: 20px;
+}
+
+.random(@min, @max) {
+  @random: `Math.round(Math.random() * (@{max} - @{min}) + @{min})`;
+}
+
+.gradient-custom {
+background: #f6d365;
+background: -webkit-linear-gradient(to right bottom, rgba(246, 211, 101, 1), rgba(253, 160, 133, 1));
+background: linear-gradient(to right bottom, rgba(246, 211, 101, 1), rgba(253, 160, 133, 1))
+}
+
+.gradient-custom-3 {
+background: #84fab0;
+background: -webkit-linear-gradient(to right, rgba(132, 250, 176, 0.5), rgba(143, 211, 244, 0.5));
+background: linear-gradient(to right, rgba(132, 250, 176, 0.5), rgba(143, 211, 244, 0.5))
+}
+
+.gradient-custom-4 {
+background: #84fab0;
+background: -webkit-linear-gradient(to right, rgba(132, 250, 176, 1), rgba(143, 211, 244, 1));
+background: linear-gradient(to right, rgba(132, 250, 176, 1), rgba(143, 211, 244, 1))
+}
+
+
+fieldset{
+          background: url("https://bogatyr.club/uploads/posts/2023-03/1679452060_bogatyr-club-p-gradient-tsvetnoi-fon-foni-vkontakte-3.jpg");
+          background-repeat:no-repeat;
+          background-position:center;
+          background-size:cover;
+}
+
+p#innerPara{padding:20px ;}
+
+legend{width:400px;padding:10px 20px;}
+
+.visible {
+  visibility: visible !important;
+}
+.invisible {
+  visibility: hidden !important;
+}
