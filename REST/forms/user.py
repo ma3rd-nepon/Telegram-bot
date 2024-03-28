@@ -27,17 +27,17 @@ class Profile:
         self.gradient = random.choice(["gradient-custom", "gradient-custom-4", "gradient-custom-3"])
         self.name = js.get("name")
         self.surname = js.get("surname")
-        self.access = js.get("access")
-        self.login_date = js.get("date of login")
+        self.position = js.get("position")
+        self.login_date = js.get("login date")
         self.email = js.get("email")
-        self.api = js.get("api")
+        self.UID = js.get("UID")
 
     def json_export(self):
         data = {
                 "name": self.name, 
                 "surname": self.surname,
                 "email": self.email,
-                "access": self.access, 
+                "position": self.position, 
                 "date of login": self.login_date
             }
         return data

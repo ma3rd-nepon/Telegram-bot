@@ -16,12 +16,14 @@ class BotUser(SqlAlchemyBase, UserMixin):
 
     telegram_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    status_in_bot = sqlalchemy.Column(sqlalchemy.String, default='user')
+    status = sqlalchemy.Column(sqlalchemy.String, default='user')
     modify_date = sqlalchemy.Column(sqlalchemy.DateTime,
                                     default=datetime.now)
+    registered = sqlalchemy.Column(sqlalchemy.Integer, default=0)
+    skey = sqlalchemy.Column(sqlalchemy.String, default="None")
 
     def __repr__(self):
-        return f"{self.telegram_id};{self.name};{self.status_in_bot}"
+        return f"{self.telegram_id};{self.name};{self.status};{self.registered};{self.skey}"
 
     def fullname(self):
         return f'{self.surname} {self.name}'

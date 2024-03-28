@@ -155,3 +155,10 @@ Traceback (most recent call last):
             ^^
 UnboundLocalError: cannot access local variable 'us' where it is not associated with a value
 2024-03-28 10:18:53,692 INFO werkzeug 127.0.0.1 - - [28/Mar/2024 10:18:53] "[35m[1mGET /post/user/get_all/0nIh1WakJiOikGchJye/bot HTTP/1.1[0m" 500 -
+2024-03-28 11:54:38,347 INFO werkzeug [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-03-28 11:54:38,347 INFO werkzeug [33mPress CTRL+C to quit[0m
+2024-03-28 11:55:29,222 INFO werkzeug 127.0.0.1 - - [28/Mar/2024 11:55:29] "GET /post/user/get/0nIh1WakJiOikGchJye/12346 HTTP/1.1" 200 -
+2024-03-28 11:55:50,058 INFO werkzeug [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-03-28 11:55:50,058 INFO werkzeug [33mPress CTRL+C to quit[0m

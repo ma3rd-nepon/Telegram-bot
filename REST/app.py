@@ -5,7 +5,7 @@ from flask import *
 
 from data import db_session
 from data.users import User
-from data.util import get_special_key
+from data.util import get_special_key, dictify_user, dictify_bot
 from forms.user import RegisterForm, LoginForm, Profile
 from data.bot_users import BotUser
 
@@ -27,8 +27,8 @@ def load_user(user_id):
     db_sess = db_session.create_session()
     return db_sess.query(User).get(user_id)
 
-logging.basicConfig(level=logging.INFO, filename="app.log",
-                    format="%(asctime)s %(levelname)s %(name)s %(message)s")
+# logging.basicConfig(level=logging.INFO, filename="app.log",
+#                     format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
 
 @app.errorhandler(404)
@@ -51,29 +51,18 @@ def check_profile():
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
     if user_id is not None:
-        ad = db_sess.query(User).get(user_id)
-        al = str(ad).split(";")
-        print()
-        print(al, len(al))
-        data = {
-            "name": al[0], 
-            "surname": al[1], 
-            "access": al[2], 
-            "date of login": al[3], 
-            "auth": True, 
-            "email": al[4],
-            "api": al[5]
-            }
+        data = dictify_user(db_sess.query(User).filter(User.id == user_id).first())
+        data["auth"] = True
         form = Profile(data)
     else:
         unknown_user = {
                 "name": "Неизвестный", 
                 "surname": "Пользователь", 
-                "access": "0", 
-                "date of login": "Неизвестно", 
-                "auth": False, 
+                "position": "0", 
+                "login date": "Неизвестно",
+                "auth": False,
                 "email": "None",
-                "api": "У вас нет его"
+                "UID": "У вас нет его"
                 }
         form = Profile(unknown_user)
     return render_template("profile.html", form=form)
@@ -82,9 +71,6 @@ def check_profile():
 @app.route('/post', methods=['GET', 'POST'])
 @login_required
 def basic():
-    # logging.info('Request: %r', request.json)
-    if request.is_json:
-        print(request.get_json(force=True))
     if request.method == 'GET':
         response = {"error": "use this with POST method"}
         return jsonify(response)
@@ -119,7 +105,9 @@ def reqister():
         user.set_password(form.password.data)
         db_sess.add(user)
         db_sess.commit()
-        return redirect('/login')
+        return render_template('register.html', title='Регистрация',
+                                   form=form,
+                                   message="Вы успешно зарегистрировались")
     return render_template('register.html', title='Регистрация', form=form)
 
 
@@ -147,14 +135,13 @@ def login():
 
 
 @app.route("/post/user/add/<uid>", methods=['POST'])
-@login_required
 def add_user_to_db(uid):
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
     try:
-        user = str(db_sess.query(User).filter(User.special_api == uid).first()).split(";")
-        user_uid = user[5]
-        user_pos = user[2]
+        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
+        user_uid = user["UID"]
+        user_pos = user["position"]
     except:
         return jsonify({"error": "wrong UID"})
 
@@ -169,7 +156,7 @@ def add_user_to_db(uid):
         bot_user = BotUser(
             telegram_id=int(js.get('telegram_id')),
             name=js.get('name'),
-            status_in_bot=js.get('status')
+            status=js.get('status')
             )
         db_sess.add(bot_user)
         db_sess.commit()
@@ -177,36 +164,53 @@ def add_user_to_db(uid):
 
 
 @app.route("/post/user/get/<uid>/<tg_id>", methods=['GET', 'POST'])
-@login_required
 def get_user_from_db(uid, tg_id):
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
     try:
-        user = str(db_sess.query(User).filter(User.special_api == uid).first()).split(";")
-        user_uid = user[5]
-        user_pos = user[2]
+        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
+        user_uid = user.get("UID")
+        user_pos = user.get("position")
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "wrong UID"})
+
+    if "admin" not in user_pos and "creator" not in user_pos:
+        return jsonify({"error": "you dont have the rights to perform this action"})
+    else:
+        try:
+            user = dictify_bot(db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).first())
+            return jsonify(user)
+        except Exception as e:
+            return jsonify({"error": str(e)})
+
+
+@app.route("/post/user/get_by_api/<uid>/<target_uid>", methods=['GET', 'POST'])
+def get_user_by_api_from_db(uid, target_uid):
+    db_sess = db_session.create_session()
+    try:
+        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
+        user_uid = user.get("UID")
+        user_pos = user.get("position")
     except:
         return jsonify({"error": "wrong UID"})
 
     if "admin" not in user_pos and "creator" not in user_pos:
         return jsonify({"error": "you dont have the rights to perform this action"})
     else:
-        user = str(db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).first()).split(";")
-        return jsonify({
-            "name": user[1],
-            "telegram_id": user[0], 
-            "status in bot": user[2]
-            })
+        user = dictify_bot(db_sess.query(User).filter(User.special_api == target_uid).first())
+        return jsonify(user)
+
+
 
 @app.route("/post/user/get_all/<uid>/<t>", methods=['GET', 'POST'])
-@login_required
 def get_all_users_from_db(uid, t):
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
     try:
-        user = str(db_sess.query(User).filter(User.special_api == uid).first()).split(";")
-        user_uid = user[5]
-        user_pos = user[2]
+        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
+        user_uid = user.get("UID")
+        user_pos = user.get("position")
     except:
         return jsonify({"error": "wrong UID"})
 
@@ -217,39 +221,26 @@ def get_all_users_from_db(uid, t):
         if t == "site":
             user = db_sess.query(User).all()
             for u in user:
-                us = str(u).split(";")
-                dictionary[user.index(u)] = {
-                    "name": us[0], 
-                    "surname": us[1],
-                    "position": us[2],
-                    "email": us[4],
-                    "UID": us[5]
-                    }
+                dictionary[user.index(u)] = dictify_user(u)
             return jsonify(dictionary)
 
         elif t == "bot":
             user = db_sess.query(BotUser).all()
             for u in user:
-                us = str(u).split(";")
-                dictionary[user.index(u)] = {
-                    "name": us[1],
-                    "status": us[2],
-                    "telegram_id": us[0]
-                    }
+                dictionary[user.index(u)] = dictify_bot(u)
             return jsonify(dictionary)
         else:
             return "error"
 
 
 @app.route("/post/user/delete/<uid>/<tg_id>", methods=['GET', 'POST'])
-@login_required
 def delete_user_from_db(uid, tg_id):
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
     try:
-        user = str(db_sess.query(User).filter(User.special_api == uid).first()).split(";")
-        user_uid = user[5]
-        user_pos = user[2]
+        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
+        user_uid = user.get("UID")
+        user_pos = user.get("position")
     except:
         return jsonify({"error": "wrong UID"})
 
@@ -286,7 +277,7 @@ def main():
     #         name="dima",
     #         surname="indus",
     #         position=f'admin-dima',
-    #         special_api=get_special_key("dima")
+    #         special_api=17932087:0nIh1WakJiOikGchJye
     #     )
     # user.set_password("no_iii12345")
     # db_sess.add(user)
