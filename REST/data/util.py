@@ -24,7 +24,7 @@ def dictify_user(string):
 		"position": s[2],
 		"login date": str(s[3]),
 		"email": s[4],
-		"UID": s[5]
+		"special_api": s[5]
 	}
 	return data
 
@@ -36,6 +36,6 @@ def dictify_bot(string):
 		"name": s[1],
 		"status": s[2],
 		"registered": s[3],
-		"UID": s[4]
+		"skey": s[4]
 	}
 	return data

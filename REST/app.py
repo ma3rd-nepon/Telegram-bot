@@ -62,7 +62,7 @@ def check_profile():
                 "login date": "Неизвестно",
                 "auth": False,
                 "email": "None",
-                "UID": "У вас нет его"
+                "special_api": "У вас нет его"
                 }
         form = Profile(unknown_user)
     return render_template("profile.html", form=form)
@@ -140,8 +140,8 @@ def add_user_to_db(uid):
     user_id = current_user.get_id()
     try:
         user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
-        user_uid = user["UID"]
-        user_pos = user["position"]
+        user_uid = user.get('special_api')
+        user_pos = user.get("position")
     except:
         return jsonify({"error": "wrong UID"})
 
@@ -202,6 +202,31 @@ def get_user_by_api_from_db(uid, target_uid):
         return jsonify(user)
 
 
+@app.route("/post/user/edit/<uid>/<tg_id>", methods=['GET', 'POST'])
+def edit_user_uid(uid, tg_id):
+    db_sess = db_session.create_session()
+    try:
+        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
+        user_uid = user.get("UID")
+        user_pos = user.get("position")
+    except:
+        return jsonify({"error": "wrong UID"})
+
+    if "admin" not in user_pos and "creator" not in user_pos:
+        return jsonify({"error": "you dont have the rights to perform this action"})
+    else:
+        try:
+            js = request.get_json(force=True)
+        except:
+            return jsonify({"error": "No JSON"})
+        try:
+            user = db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).update(js)
+            db_sess.commit()
+            return jsonify({"status": "OK"})
+        except Exception as e:
+            return jsonify({"error": str(e)})
+        
+
 
 @app.route("/post/user/get_all/<uid>/<t>", methods=['GET', 'POST'])
 def get_all_users_from_db(uid, t):
@@ -249,6 +274,7 @@ def delete_user_from_db(uid, tg_id):
     else:
         try:
             user = db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).first().delete()
+            db_sess.commit()
             return jsonify({"status": "OK"})
         except Exception as e:
             return jsonify({"error": f"{e}"})
