@@ -1,0 +1,34 @@
+{
+    "_": "InlineQuery",
+    "id": "5337594979726620847",
+    "from_user": {
+        "_": "User",
+        "id": USER_ID
+        "is_self": false,
+        "is_contact": false,
+        "is_mutual_contact": false,
+        "is_deleted": false,
+        "is_bot": false,
+        "is_verified": false,
+        "is_restricted": false,
+        "is_scam": false,
+        "is_fake": false,
+        "is_support": false,
+        "is_premium": false,
+        "first_name": "mærd",
+        "status": "UserStatus.RECENTLY",
+        "username": "maerxd",
+        "language_code": "ru",
+        "dc_id": 2,
+        "photo": {
+            "_": "ChatPhoto",
+            "small_file_id": "AQADAgADntAxG2lTIEoAEAIAA1ryEkoABGP5-XIaTm7zAAQeBA",
+            "small_photo_unique_id": "AgADntAxG2lTIEo",
+            "big_file_id": "AQADAgADntAxG2lTIEoAEAMAA1ryEkoABGP5-XIaTm7zAAQeBA",
+            "big_photo_unique_id": "AgADntAxG2lTIEo"
+        }
+    },
+    "query": "text"
+    "offset": "",
+    "chat_type": "ChatType.BOT"
+}

@@ -9,6 +9,7 @@ cffi==1.16.0
 charset-normalizer==3.3.2
 click==8.1.7
 colorama==0.4.6
+convopyro @ git+https://github.com/Ripeey/Conversation-Pyrogram@a39cc9e0c1a689c9904dd5be5419246868daecfb
 Faker==24.4.0
 Flask==3.0.2
 Flask-JWT-Extended==4.6.0

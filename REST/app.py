@@ -16,7 +16,13 @@ import sqlalchemy
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '9GqXPkMRCoKILBYmnZtDrE96Pekfc1QevzR5gNeL'
-api = "BgZlwxZ4VfkOmx270PaPYTiPv6SftVDjvvd80IIN"
+
+profiles_bio = {
+    0: "Неизвестно",
+    1: "Стандартный пользователь",
+    2: "Администратор проекта",
+    4: "Создатель"
+}
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -53,6 +59,7 @@ def check_profile():
     if user_id is not None:
         data = dictify_user(db_sess.query(User).filter(User.id == user_id).first())
         data["auth"] = True
+        data["bio"] = profiles_bio[int(data.get("position"))]
         form = Profile(data)
     else:
         unknown_user = {
@@ -62,18 +69,11 @@ def check_profile():
                 "login date": "Неизвестно",
                 "auth": False,
                 "email": "None",
-                "special_api": "У вас нет его"
+                "special_api": "У вас нет его",
+                "bio": profiles_bio[0]
                 }
         form = Profile(unknown_user)
     return render_template("profile.html", form=form)
-
-
-@app.route('/post', methods=['GET', 'POST'])
-@login_required
-def basic():
-    if request.method == 'GET':
-        response = {"error": "use this with POST method"}
-        return jsonify(response)
 
 
 
@@ -99,8 +99,7 @@ def reqister():
             email=form.email.data,
             name=form.name.data,
             surname=form.surname.data,
-            position=f'default-{form.name.data}',
-            special_api=get_special_key(form.name.data)
+            special_api=get_special_key(form.email.data)
         )
         user.set_password(form.password.data)
         db_sess.add(user)
@@ -134,7 +133,7 @@ def login():
     return render_template('login.html', title='Авторизация', form=form)
 
 
-@app.route("/post/user/add/<uid>", methods=['POST'])
+@app.route("/user/add/<uid>", methods=['POST'])
 def add_user_to_db(uid):
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
@@ -145,8 +144,8 @@ def add_user_to_db(uid):
     except:
         return jsonify({"error": "wrong UID"})
 
-    if "admin" not in user_pos and "creator" not in user_pos:
-        return jsonify({"error": "you dont have the rights to perform this action"})
+    if user_pos < 2:
+        return jsonify({"error": f"The required access level - 2, you have the {user_pos} level."})
     else:
         try:
             js = request.get_json(force=True)
@@ -163,7 +162,7 @@ def add_user_to_db(uid):
         return jsonify({"status": "OK"})
 
 
-@app.route("/post/user/get/<uid>/<tg_id>", methods=['GET', 'POST'])
+@app.route("/user/get/<uid>/<tg_id>", methods=['GET', 'POST'])
 def get_user_from_db(uid, tg_id):
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
@@ -174,18 +173,15 @@ def get_user_from_db(uid, tg_id):
     except Exception as e:
         print(e)
         return jsonify({"error": "wrong UID"})
-
-    if "admin" not in user_pos and "creator" not in user_pos:
-        return jsonify({"error": "you dont have the rights to perform this action"})
     else:
         try:
             user = dictify_bot(db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).first())
             return jsonify(user)
         except Exception as e:
-            return jsonify({"error": str(e)})
+            return jsonify({"error": "no users with this ID were found"})
 
 
-@app.route("/post/user/get_by_api/<uid>/<target_uid>", methods=['GET', 'POST'])
+@app.route("/user/get_by_api/<uid>/<target_uid>", methods=['GET', 'POST'])
 def get_user_by_api_from_db(uid, target_uid):
     db_sess = db_session.create_session()
     try:
@@ -195,14 +191,14 @@ def get_user_by_api_from_db(uid, target_uid):
     except:
         return jsonify({"error": "wrong UID"})
 
-    if "admin" not in user_pos and "creator" not in user_pos:
-        return jsonify({"error": "you dont have the rights to perform this action"})
+    if user_pos < 2:
+        return jsonify({"error": f"The required access level - 2, you have the {user_pos} level."})
     else:
-        user = dictify_bot(db_sess.query(User).filter(User.special_api == target_uid).first())
+        user = dictify_user(db_sess.query(User).filter(User.special_api == target_uid).first())
         return jsonify(user)
 
 
-@app.route("/post/user/edit/<uid>/<tg_id>", methods=['GET', 'POST'])
+@app.route("/user/edit/<uid>/<tg_id>", methods=['GET', 'POST'])
 def edit_user_uid(uid, tg_id):
     db_sess = db_session.create_session()
     try:
@@ -212,8 +208,8 @@ def edit_user_uid(uid, tg_id):
     except:
         return jsonify({"error": "wrong UID"})
 
-    if "admin" not in user_pos and "creator" not in user_pos:
-        return jsonify({"error": "you dont have the rights to perform this action"})
+    if user_pos < 2:
+        return jsonify({"error": f"The required access level - 2, you have the {user_pos} level."})
     else:
         try:
             js = request.get_json(force=True)
@@ -228,7 +224,7 @@ def edit_user_uid(uid, tg_id):
         
 
 
-@app.route("/post/user/get_all/<uid>/<t>", methods=['GET', 'POST'])
+@app.route("/user/get_all/<uid>/<t>", methods=['GET', 'POST'])
 def get_all_users_from_db(uid, t):
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
@@ -239,8 +235,8 @@ def get_all_users_from_db(uid, t):
     except:
         return jsonify({"error": "wrong UID"})
 
-    if "admin" not in user_pos and "creator" not in user_pos:
-        return jsonify({"error": "you dont have the rights to perform this action"})
+    if user_pos < 2:
+        return jsonify({"error": f"The required access level - 2, you have the {user_pos} level."})
     else:
         dictionary = dict()
         if t == "site":
@@ -258,7 +254,7 @@ def get_all_users_from_db(uid, t):
             return "error"
 
 
-@app.route("/post/user/delete/<uid>/<tg_id>", methods=['GET', 'POST'])
+@app.route("/user/delete/<uid>/<tg_id>", methods=['GET', 'POST'])
 def delete_user_from_db(uid, tg_id):
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
@@ -269,8 +265,8 @@ def delete_user_from_db(uid, tg_id):
     except:
         return jsonify({"error": "wrong UID"})
 
-    if "admin" not in user_pos and "creator" not in user_pos:
-        return jsonify({"error": "you dont have the rights to perform this action"})
+    if user_pos < 4:
+        return jsonify({"error": f"The required access level - 3, you have the {user_pos} level."})
     else:
         try:
             user = db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).first().delete()
@@ -302,8 +298,8 @@ def main():
     #         email="example@ex.com",
     #         name="dima",
     #         surname="indus",
-    #         position=f'admin-dima',
-    #         special_api=17932087:0nIh1WakJiOikGchJye
+    #         position=4,
+    #         special_api="17932087:0nIh1WakJiOikGchJye"
     #     )
     # user.set_password("no_iii12345")
     # db_sess.add(user)

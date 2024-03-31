@@ -1,0 +1,6 @@
+.env
+/other/.env
+.git
+test-pyrogram-bot.session
+/other/__pycache__/
+test-pyrogram-bot.session-journal

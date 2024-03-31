@@ -14,7 +14,7 @@
                 alt="Avatar" class="img-fluid my-5" style="width: 80px;" />
               <h5>{{ form.name }} {{ form.surname }}</h5>
               {% if form.is_authorized %}
-                <p>Стандартный пользователь</p>
+                <p>{{ form.bio }}</p>
               {% else %}
                 <p>Мы не знаем как вы сюда попали, войдите в систему</p>
               {% endif %}
@@ -30,7 +30,7 @@
                     <p class="text-muted">{{ form.email }}</p>
                   </div>
                   <div class="col-6 mb-3">
-                    <h6>Секретный API</h6>
+                    <h6>Database Token</h6>
                     <p class="text-muted">{{ form.special_api }}</p>
                   </div>
                 </div>

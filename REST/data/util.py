@@ -12,16 +12,15 @@ def get_special_key(query):
 		"api": query
 	}
 	result = jwt.encode(text, jwt_api, algorithm=alg)
-	return str(random.randint(10000000, 99999999)) + ":" + str(result.split(".")[1][::-1])
+	return str(result.split(".")[1][::-1])
 
 
 def dictify_user(string):
-	print(string, "DICTIFY")
 	s = str(string).split(";")
 	data = {
 		"name": s[0],
 		"surname": s[1],
-		"position": s[2],
+		"position": int(s[2]),
 		"login date": str(s[3]),
 		"email": s[4],
 		"special_api": s[5]

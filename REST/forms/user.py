@@ -30,14 +30,5 @@ class Profile:
         self.position = js.get("position")
         self.login_date = js.get("login date")
         self.email = js.get("email")
-        self.UID = js.get("UID")
-
-    def json_export(self):
-        data = {
-                "name": self.name, 
-                "surname": self.surname,
-                "email": self.email,
-                "position": self.position, 
-                "date of login": self.login_date
-            }
-        return data
+        self.special_api = js.get("special_api")
+        self.bio = js.get("bio")
