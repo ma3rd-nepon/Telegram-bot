@@ -26,7 +26,6 @@ app = Client(name=get_from_config("name"),
              )
 quiz = patch(app)
 
-
 async def main_settings(message, send=True):
     markup = InlineKeyboardMarkup([
         [InlineKeyboardButton("Сайт", callback_data="site"), InlineKeyboardButton("Язык", callback_data="language")], 
@@ -155,16 +154,46 @@ async def get_terminal_command(client, message):
         await message.reply(str(e))
 
 
-@app.on_message(filters.command("setting", prefix))
+@app.on_message(filters.command("setting", prefix)) # настройка бота через инлайн кнопки
 async def new_settings(client, message):
     await main_settings(message, True)
 
 
+@app.on_message(filters.command("exit", command_prefix)) # выйти в окно
+async def on_exit_bot(client, message):
+    user = get_user(message)
+    if user['status'] != "creator":
+        await message.reply("у вас нет прав")
+        return
+    exit()
+
+
+@app.on_message(filters.command("gpt", prefix)) # омг гпт чат
+async def chat_gpt_answer(client, message):
+    result = await get_cp_response(" ".join(message.command[1:]))
+    if "error - " in result:
+        await app.send_message(chat_id=get_from_config("owner"), text=result)
+        result = "Произошла ошибка, попробуйте позже"
+    await message.reply(result)
+
+
+@app.on_message(filters.command("image", prefix)) # генерация картинок (медленно)
+async def draw_prompt(client, message):
+    prompt = " ".join(message.command[1:])
+    if prompt == '':
+        return
+    result = await draw(prompt, str(message.id))
+    await app.send_photo(chat_id=message.chat.id, photo=result)
+
+
 @app.on_callback_query()
 async def catch_callbacks(client, callback):
-    # if "PRIVATE" not in str(callback.message.chat.type):
-    #     await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id, text="Настройки работают только в личных сообщениях с ботом!", reply_markup=None)
-    #     return
+    try:
+        if "PRIVATE" not in str(callback.message.chat.type):
+            await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id, text="Настройки работают только в личных сообщениях с ботом!", reply_markup=None)
+            return
+    except:
+        pass
 
     if "to_main" in callback.data:
         await main_settings(callback.message, False)
@@ -225,17 +254,12 @@ async def catch_callbacks(client, callback):
         res = get_userinfo(callback.from_user.id)
         await app.edit_inline_text(callback.inline_message_id, text=f'{ta}shell \n{res} {ta}')
 
-
-
-
-@app.on_message(filters.command("exit", command_prefix))
-async def on_exit_bot(client, message):
-    user = get_user(message)
-    if user['status'] != "creator":
-        await message.reply("у вас нет прав")
-        return
-    exit()
-
+    elif "draw_img" in callback.data:
+        # result = await draw(str(callback.data)[8:], callback.inline_message_id)
+        # await app.send_photo(chat_id=get_from_config("owner"), photo=f'{callback.inline_message_id}.png', has_spoiler=True)
+        await app.edit_inline_media(inline_message_id=callback.inline_message_id, media=InputMediaDocument(f"AgAAAMo0AwBa8hJKNA2vpUwnrd8.jpg", caption="not works yet"))
+        # await app.edit_inline_reply_markup(inline_message_id=callback.inline_message_id, reply_markup=InlineKeyboardMarkup([
+        #                 [InlineKeyboardButton("👍", callback_data='like'), InlineKeyboardButton("👎", callback_data='dislike')]]))
 
 @app.on_inline_query()
 async def answering(client, inline):
@@ -260,6 +284,12 @@ async def answering(client, inline):
                     description="из базы данных",
                     input_message_content=InputTextMessageContent(f"получить информацию об аккаунте из базы данных"),
                     reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Получить", callback_data="get_user")]])
+                    ),
+                InlineQueryResultArticle(
+                    title="Сгенерировать картинку",
+                    description="через ии",
+                    input_message_content=InputTextMessageContent(f"Генерация картинки, запрос: **{inline.query}**"),
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Получить", callback_data=f"draw_img:{inline.query}")]])
                     )
             ],
             cache_time=1
@@ -268,6 +298,9 @@ async def answering(client, inline):
         if "[400 MESSAGE_EMPTY]" in str(e):
             return
         print(str(e))
+
+
+
 
 
 print("bot started work")
