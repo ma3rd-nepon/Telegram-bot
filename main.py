@@ -2,6 +2,7 @@ from pyrogram import *
 from pyrogram.types import *
 from pyrocon import patch
 from other.utils import *
+from other.info import *
 
 import requests
 import asyncio
@@ -16,7 +17,9 @@ statuses = {
     2: "admin",
     4: "creator"
 }
+
 likes = dict()
+vals = dict()
 
 api_id = get_from_config("api_id")
 app = Client(name=get_from_config("name"), 
@@ -186,6 +189,43 @@ async def draw_prompt(client, message):
     await app.send_photo(chat_id=message.chat.id, photo=result)
 
 
+@app.on_message(filters.command("курс", prefix)) # узнать текущий курс валют
+async def get_course(client, message):
+    try:
+        if len(message.command) > 1:
+            val = message.command[1]
+            if val in '. -' or val == '':
+                val = "usd"
+            if len(message.command) > 2:
+                count = int(message.command[2])
+            else:
+                count = 1
+        else:
+            val, count = 'usd', 1
+        result = course(val.upper(), count)
+    except Exception as e:
+        result = "Ошибка, видимо вы ввели запрос неправильно.\nПример: /курс BYN 1000"
+    await message.reply(result)
+
+
+@app.on_message(filters.command("ip", prefix)) # пробить по айпи (хацкинг)
+async def get_ip_location(client, message):
+    try:
+        result = location(message.text[4:])
+    except Exception as e:
+        result = "Неправильный ввод айпи, либо такого не существует"
+    await message.reply(result)
+
+
+@app.on_message(filters.command("погода", prefix))
+async def get_weather(client, command):
+    try:
+        result = weather(message.text[8:])
+    except:
+        result = "Неправильно написан город либо его несуществует"
+    await message.reply(result)
+
+
 @app.on_callback_query()
 async def catch_callbacks(client, callback):
     try:
@@ -261,13 +301,38 @@ async def catch_callbacks(client, callback):
         # await app.edit_inline_reply_markup(inline_message_id=callback.inline_message_id, reply_markup=InlineKeyboardMarkup([
         #                 [InlineKeyboardButton("👍", callback_data='like'), InlineKeyboardButton("👎", callback_data='dislike')]]))
 
+    elif "gptchat" in callback.data:
+        result = await get_cp_response(callback.data.split(":", maxsplit=1)[1])
+        await app.edit_inline_text(inline_message_id=callback.inline_message_id, text=result, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("👍", callback_data='like'), InlineKeyboardButton("👎", callback_data='dislike')]]))
+
+    elif "valute" in callback.data:
+        a = vals.get(callback.inline_message_id)
+        if a is None:
+            a = ["USD", 1]
+        else:
+            a = a.split(":")
+        result = course(a[0], int(a[1]))
+        await app.edit_inline_text(inline_message_id=callback.inline_message_id, text=result, reply_markup=None)
+
+    elif callback.data.split(":", maxsplit=1)[0] in mon:
+        a = callback.data.split(":", maxsplit=1)
+        if isinstance(a[1], int):
+            await app.edit_inline_text(inline_message_id=callback.inline_message_id, text=f"Сумма валюты написан некорректно", reply_markup=None)
+            return
+        vals[callback.inline_message_id] = callback.data
+        await app.edit_inline_text(inline_message_id=callback.inline_message_id, text=f"Курс {a[0]}, в размере **{a[1]}**", reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton(f"{i}", f"{i}:{a[1]}") for i in mon],
+                        [InlineKeyboardButton("Получить", callback_data=f"valute")]]))
+
+
 @app.on_inline_query()
 async def answering(client, inline):
     try:
         await inline.answer(
             results=[
                 InlineQueryResultArticle(
-                    title="Like of dislike",
+                    title="Like or dislike",
                     description="send to chat",
                     input_message_content=InputTextMessageContent(inline.query),
                     reply_markup=InlineKeyboardMarkup([
@@ -287,9 +352,23 @@ async def answering(client, inline):
                     ),
                 InlineQueryResultArticle(
                     title="Сгенерировать картинку",
-                    description="через ии",
+                    description="ждем фикса от пирограма",
                     input_message_content=InputTextMessageContent(f"Генерация картинки, запрос: **{inline.query}**"),
                     reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Получить", callback_data=f"draw_img:{inline.query}")]])
+                    ),
+                InlineQueryResultArticle(
+                    title="Гпт ответ",
+                    description="работает",
+                    input_message_content=InputTextMessageContent(f"Генерация ответа от Chat GPT, запрос: **{inline.query}**"),
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Получить", callback_data=f"gptchat:{inline.query}")]])
+                    ),
+                InlineQueryResultArticle(
+                    title="Курс валют",
+                    description="Напишите количество",
+                    input_message_content=InputTextMessageContent(f"Курс валюты, в размере **{inline.query}**"),
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton(f"{i}", f"{i}:{inline.query}") for i in mon],
+                        [InlineKeyboardButton("Получить", callback_data=f"valute")]])
                     )
             ],
             cache_time=1
