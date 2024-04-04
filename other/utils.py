@@ -101,7 +101,7 @@ def promots_add(user_id):
             return False
 
     with open('other/promots.txt', 'a') as file:
-        file.write(f'{user_id}\n')
+        file.write(f'\n{user_id}')
         return True
 
 
@@ -119,6 +119,6 @@ async def get_cp_response(query):
 
 async def draw(query, name):
     prompt = query.encode().decode("utf-8", "ignore")
-    resp = await AsyncClient.create_generation("pollinations", prompt)
-    Image.open(BytesIO(resp)).save(f"{name}.png")
+    resp = await AsyncClient.create_generation("prodia", prompt)
+    Image.open(BytesIO(resp)).save(f"{name}.jpg")
     return BytesIO(resp)

@@ -218,7 +218,7 @@ async def get_ip_location(client, message):
 
 
 @app.on_message(filters.command("погода", prefix))
-async def get_weather(client, command):
+async def get_weather(client, message):
     try:
         result = weather(message.text[8:])
     except:
@@ -295,11 +295,11 @@ async def catch_callbacks(client, callback):
         await app.edit_inline_text(callback.inline_message_id, text=f'{ta}shell \n{res} {ta}')
 
     elif "draw_img" in callback.data:
-        # result = await draw(str(callback.data)[8:], callback.inline_message_id)
-        # await app.send_photo(chat_id=get_from_config("owner"), photo=f'{callback.inline_message_id}.png', has_spoiler=True)
-        await app.edit_inline_media(inline_message_id=callback.inline_message_id, media=InputMediaDocument(f"AgAAAMo0AwBa8hJKNA2vpUwnrd8.jpg", caption="not works yet"))
-        # await app.edit_inline_reply_markup(inline_message_id=callback.inline_message_id, reply_markup=InlineKeyboardMarkup([
-        #                 [InlineKeyboardButton("👍", callback_data='like'), InlineKeyboardButton("👎", callback_data='dislike')]]))
+        result = await draw(str(callback.data)[8:], callback.inline_message_id)
+        await app.send_photo(chat_id=get_from_config("owner"), photo=result, has_spoiler=True)
+        await app.edit_inline_media(inline_message_id=callback.inline_message_id, media=InputMediaPhoto(f"{callback.inline_message_id}.jpg", caption="not works yet"))
+        await app.edit_inline_reply_markup(inline_message_id=callback.inline_message_id, reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("👍", callback_data='like'), InlineKeyboardButton("👎", callback_data='dislike')]]))
 
     elif "gptchat" in callback.data:
         result = await get_cp_response(callback.data.split(":", maxsplit=1)[1])
@@ -312,7 +312,10 @@ async def catch_callbacks(client, callback):
             a = ["USD", 1]
         else:
             a = a.split(":")
-        result = course(a[0], int(a[1]))
+        if isinstance(a[1], int):
+            result = course(a[0], int(a[1]))
+        else:
+            result = "После юзернейма бота напишите сумму а не какой то текст!"
         await app.edit_inline_text(inline_message_id=callback.inline_message_id, text=result, reply_markup=None)
 
     elif callback.data.split(":", maxsplit=1)[0] in mon:
