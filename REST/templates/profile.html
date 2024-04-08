@@ -45,7 +45,8 @@
                     <h6>Telegram id</h6>
                     {% if form.is_authorized %}
                       {% if form.tg_id != 0 %}
-                        <p class="text-muted">{{ form.tg_id }}</p>
+                        <p class="text-muted">{{ form.tg_id }} </p>
+                        <a class="btn btn-tertiary" href="/set_tg_id">Сменить</a>
                       {% else %}
                         <a class="btn btn-tertiary" href="/set_tg_id">Указать</a>
                       {% endif %}

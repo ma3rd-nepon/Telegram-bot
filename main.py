@@ -4,10 +4,8 @@ from pyrocon import patch
 from other.utils import *
 from other.info import *
 
-import requests
 import asyncio
 import random
-
 
 prefix = "/"
 command_prefix = get_from_config("prefix")
@@ -22,22 +20,24 @@ likes = dict()
 vals = dict()
 
 api_id = get_from_config("api_id")
-app = Client(name=get_from_config("name"), 
+app = Client(name=get_from_config("name"),
              api_id=api_id,
              api_hash=get_from_config("api_hash"),
              bot_token=get_from_config("bot_token"),
              )
 quiz = patch(app)
 
+
 async def main_settings(message, send=True):
     markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Сайт", callback_data="site"), InlineKeyboardButton("Язык", callback_data="language")], 
+        [InlineKeyboardButton("Сайт", callback_data="site"), InlineKeyboardButton("Язык", callback_data="language")],
         [InlineKeyboardButton("Запрос на повышение", callback_data="promote")]
-        ])
+    ])
     if send:
         await app.send_message(chat_id=message.chat.id, text="Настройки бота", reply_markup=markup)
     else:
-        await app.edit_message_text(chat_id=message.chat.id, message_id=message.id, text="Настройки бота", reply_markup=markup)
+        await app.edit_message_text(chat_id=message.chat.id, message_id=message.id, text="Настройки бота",
+                                    reply_markup=markup)
 
 
 async def edit_inline_query_likes_buttons(callback):
@@ -45,18 +45,20 @@ async def edit_inline_query_likes_buttons(callback):
     like = 0
     dislike = 0
     for i in likes[callback.inline_message_id]:
-            if likes[callback.inline_message_id][i] == "like":
-                like += 1
-            if likes[callback.inline_message_id][i] == "dislike":
-                dislike += 1
+        if likes[callback.inline_message_id][i] == "like":
+            like += 1
+        if likes[callback.inline_message_id][i] == "dislike":
+            dislike += 1
     await app.edit_inline_reply_markup(inline_message_id=callback.inline_message_id, reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton(f"👍 {like}", callback_data='like'), InlineKeyboardButton(f"👎 {dislike}", callback_data='dislike')]
-            ]))
+        [InlineKeyboardButton(f"👍 {like}", callback_data='like'),
+         InlineKeyboardButton(f"👎 {dislike}", callback_data='dislike')]
+    ]))
 
-@app.on_message(filters.command("start", prefix)) # старт
+
+@app.on_message(filters.command("start", prefix))  # старт
 async def start_function(client, message):
     user_id = message.from_user.id
-    user = get_user(message)
+    user = await get_user(message)
     try:
         name = user["name"]
     except:
@@ -64,10 +66,10 @@ async def start_function(client, message):
     await message.reply("Рад вас видеть, {}. Чтобы настроить бота для себя, напишите /setting".format(name))
 
 
-@app.on_message(filters.command("profile", prefix)) # показать ваш профиль
+@app.on_message(filters.command("profile", prefix))  # показать ваш профиль
 async def start_dialog(client, message):
     user_id = message.from_user.id
-    user = get_user(message)
+    user = await get_user(message)
     result = f"""
 Имя - {user['name']}
 Зарегистрирован на сайте - {user['registered']}
@@ -78,48 +80,7 @@ DB Token - {user['skey']}
     await message.reply(result)
 
 
-@app.on_message(filters.command("setting_old", prefix)) # старые настройки через режим викторины
-async def hzhz(client, message):
-    user_id = message.from_user.id
-    user = get_user(message)
-    if user.get("skey") != "None":
-        await message.reply("Вы уже прошли настройку")
-        return
-    await message.reply("Итак начнем мою настройку!")
-    answer = await question(message, 'Вы зарегистрированы на сайте? (Да/Нет)', quiz)
-    if "да" in answer.text.lower():
-        edit_user(user_id, {"registered": "да"})
-        answer = await question(message, "Отправьте мне свой Секретный API (API находится на сайте в профиле)", quiz)
-        his_uid = answer.text
-        await message.reply("Подождите пока я найду ваш аккаунт")
-        user = get_user_by_uid(answer.text)
-        if user != {"error": "Not found"}:
-            await message.reply("Нашел ваш аккаунт!")
-            answer = await question(message, f"Вы {user['name']}? (Да/Нет)", quiz)
-            if 'да' in answer.text:
-                await message.reply("Отлично! Теперь свяжем ваши учетные записи.")
-                if edit_user(user_id, {"skey": his_uid}) and edit_user(user_id, {"status": statuses[int(user["position"])]}):
-                    await message.reply("Все получилось! Можете проверить профиль, вызвав команду /profile.")
-                    return
-                await message.reply("К сожалению возникла ошибка! В скором времени починим.")
-                return
-            elif "нет" in answer.text.lower():
-                await message.reply("Прошу прощения вышла какая то ошибка, обратитесь к разработчику за ее решением")
-                return
-            else:
-                await message.reply("Моя твоя не понимать! Пиши да или нет!")
-        else:
-            await message.reply("Не нашел такого ключа, похоже что вы ввели его неправильно.")
-            return
-    elif "нет" in answer.text.lower():
-        await message.reply("Жаль. Зарегистрируйтесь на сайте https://qwertedrtvghjn.pythonanywhere.com и пройдите настройку снова")
-        return
-    else:
-        await message.reply("Я не понял вашего ответа, при ответе выберите одно утверждение из скобок после вопроса.")
-        return
-
-
-@app.on_message(filters.command("commands", prefix)) # список всех команд
+@app.on_message(filters.command("commands", prefix))  # список всех команд
 async def return_all_comms(client, message):
     result = f"{ta}shell\nСписок всех доступных команд\n\n"
     coms = terminal(f'cat "main.py" | grep "{com_str}"')
@@ -144,34 +105,40 @@ async def return_all_comms(client, message):
     return
 
 
+@app.on_message(filters.command("me", command_prefix))
+async def get_me(client, message):
+    user = await get_user(message)
+    await message.reply(f"{ta}shell\n{user}{ta}")
+
+
 @app.on_message(filters.command("terminal", command_prefix))
 async def get_terminal_command(client, message):
-    user = get_user(message)
+    user = await get_user(message)
     if user.get("status") != "creator":
         await message.reply("Вам недоступна данная функция")
         return
-    command = " ".join(message.command[1:]) # message.text.split == message.command
+    command = " ".join(message.command[1:])  # message.text.split == message.command
     try:
         await message.reply(terminal(command))
     except Exception as e:
         await message.reply(str(e))
 
 
-@app.on_message(filters.command("setting", prefix)) # настройка бота через инлайн кнопки
+@app.on_message(filters.command("setting", prefix))  # настройка бота через инлайн кнопки
 async def new_settings(client, message):
     await main_settings(message, True)
 
 
-@app.on_message(filters.command("exit", command_prefix)) # выйти в окно
+@app.on_message(filters.command("exit", command_prefix))  # выйти в окно
 async def on_exit_bot(client, message):
-    user = get_user(message)
+    user = await get_user(message)
     if user['status'] != "creator":
         await message.reply("у вас нет прав")
         return
     exit()
 
 
-@app.on_message(filters.command("gpt", prefix)) # омг гпт чат
+@app.on_message(filters.command("gpt", prefix))  # омг гпт чат
 async def chat_gpt_answer(client, message):
     result = await get_cp_response(" ".join(message.command[1:]))
     if "error - " in result:
@@ -180,7 +147,7 @@ async def chat_gpt_answer(client, message):
     await message.reply(result)
 
 
-@app.on_message(filters.command("image", prefix)) # генерация картинок (медленно)
+@app.on_message(filters.command("image", prefix))  # генерация картинок (медленно)
 async def draw_prompt(client, message):
     prompt = " ".join(message.command[1:])
     if prompt == '':
@@ -189,7 +156,7 @@ async def draw_prompt(client, message):
     await app.send_photo(chat_id=message.chat.id, photo=result)
 
 
-@app.on_message(filters.command("курс", prefix)) # узнать текущий курс валют
+@app.on_message(filters.command("курс", prefix))  # узнать текущий курс валют
 async def get_course(client, message):
     try:
         if len(message.command) > 1:
@@ -208,7 +175,7 @@ async def get_course(client, message):
     await message.reply(result)
 
 
-@app.on_message(filters.command("ip", prefix)) # пробить по айпи (хацкинг)
+@app.on_message(filters.command("ip", prefix))  # пробить по айпи (хацкинг)
 async def get_ip_location(client, message):
     try:
         result = location(message.text[4:])
@@ -230,7 +197,9 @@ async def get_weather(client, message):
 async def catch_callbacks(client, callback):
     try:
         if "PRIVATE" not in str(callback.message.chat.type):
-            await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id, text="Настройки работают только в личных сообщениях с ботом!", reply_markup=None)
+            await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,
+                                        text="Настройки работают только в личных сообщениях с ботом!",
+                                        reply_markup=None)
             return
     except:
         pass
@@ -239,10 +208,11 @@ async def catch_callbacks(client, callback):
         await main_settings(callback.message, False)
 
     elif "site" in callback.data:
-        await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id, text="Настройки сайта", reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton('Указать DB Token', callback_data="set_token")], 
-            [InlineKeyboardButton('Редактировать данные', callback_data="site_userdata")],
-            [InlineKeyboardButton("Назад", callback_data="to_main")]
+        await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,
+                                    text="Настройки сайта", reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton('Указать DB Token', callback_data="set_token")],
+                [InlineKeyboardButton('Редактировать данные', callback_data="site_userdata")],
+                [InlineKeyboardButton("Назад", callback_data="to_main")]
             ]))
 
     elif "set_token" in callback.data:
@@ -259,9 +229,11 @@ async def catch_callbacks(client, callback):
         await callback.message.reply(text)
 
     elif "language" in callback.data:
-        await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id, text="Выберите подходящий для вас язык", reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton('🇷🇺', callback_data=f"set_ru_lang"), InlineKeyboardButton('🇺🇸', callback_data=f"set_en_lang")],
-            [InlineKeyboardButton("Назад", callback_data="to_main")]
+        await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,
+                                    text="Выберите подходящий для вас язык", reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton('🇷🇺', callback_data=f"set_ru_lang"),
+                 InlineKeyboardButton('🇺🇸', callback_data=f"set_en_lang")],
+                [InlineKeyboardButton("Назад", callback_data="to_main")]
             ]))
 
     elif "set_ru_lang" in callback.data or "set_en_lang" in callback.data:
@@ -291,20 +263,25 @@ async def catch_callbacks(client, callback):
         await edit_inline_query_likes_buttons(callback)
 
     elif callback.data == 'get_user':
-        res = get_userinfo(callback.from_user.id)
+        res = await get_user(callback)
         await app.edit_inline_text(callback.inline_message_id, text=f'{ta}shell \n{res} {ta}')
 
     elif "draw_img" in callback.data:
         result = await draw(str(callback.data)[8:], callback.inline_message_id)
         await app.send_photo(chat_id=get_from_config("owner"), photo=result, has_spoiler=True)
-        await app.edit_inline_media(inline_message_id=callback.inline_message_id, media=InputMediaPhoto(f"{callback.inline_message_id}.jpg", caption="not works yet"))
-        await app.edit_inline_reply_markup(inline_message_id=callback.inline_message_id, reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("👍", callback_data='like'), InlineKeyboardButton("👎", callback_data='dislike')]]))
+        await app.edit_inline_media(inline_message_id=callback.inline_message_id,
+                                    media=InputMediaPhoto(f"{callback.inline_message_id}.jpg", caption="not works yet"))
+        await app.edit_inline_reply_markup(inline_message_id=callback.inline_message_id,
+                                           reply_markup=InlineKeyboardMarkup([
+                                               [InlineKeyboardButton("👍", callback_data='like'),
+                                                InlineKeyboardButton("👎", callback_data='dislike')]]))
 
     elif "gptchat" in callback.data:
         result = await get_cp_response(callback.data.split(":", maxsplit=1)[1])
-        await app.edit_inline_text(inline_message_id=callback.inline_message_id, text=result, reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("👍", callback_data='like'), InlineKeyboardButton("👎", callback_data='dislike')]]))
+        await app.edit_inline_text(inline_message_id=callback.inline_message_id, text=result,
+                                   reply_markup=InlineKeyboardMarkup([
+                                       [InlineKeyboardButton("👍", callback_data='like'),
+                                        InlineKeyboardButton("👎", callback_data='dislike')]]))
 
     elif "valute" in callback.data:
         a = vals.get(callback.inline_message_id)
@@ -321,12 +298,14 @@ async def catch_callbacks(client, callback):
     elif callback.data.split(":", maxsplit=1)[0] in mon:
         a = callback.data.split(":", maxsplit=1)
         if isinstance(a[1], int):
-            await app.edit_inline_text(inline_message_id=callback.inline_message_id, text=f"Сумма валюты написан некорректно", reply_markup=None)
+            await app.edit_inline_text(inline_message_id=callback.inline_message_id,
+                                       text=f"Сумма валюты написан некорректно", reply_markup=None)
             return
         vals[callback.inline_message_id] = callback.data
-        await app.edit_inline_text(inline_message_id=callback.inline_message_id, text=f"Курс {a[0]}, в размере **{a[1]}**", reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton(f"{i}", f"{i}:{a[1]}") for i in mon],
-                        [InlineKeyboardButton("Получить", callback_data=f"valute")]]))
+        await app.edit_inline_text(inline_message_id=callback.inline_message_id,
+                                   text=f"Курс {a[0]}, в размере **{a[1]}**", reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(f"{i}", f"{i}:{a[1]}") for i in mon],
+                [InlineKeyboardButton("Получить", callback_data=f"valute")]]))
 
 
 @app.on_inline_query()
@@ -339,32 +318,37 @@ async def answering(client, inline):
                     description="send to chat",
                     input_message_content=InputTextMessageContent(inline.query),
                     reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("👍", callback_data='like'), InlineKeyboardButton("👎", callback_data='dislike')]])
-                    ),
+                        [InlineKeyboardButton("👍", callback_data='like'),
+                         InlineKeyboardButton("👎", callback_data='dislike')]])
+                ),
                 InlineQueryResultArticle(
                     title="Ссылка на сайт",
                     description="чтоб не потерять",
                     input_message_content=InputTextMessageContent("Нажми на кнопку чтоб перейти на сайт"),
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Ссылка", url="https://qwertedrtvghjn.pythonanywhere.com/")]])
-                    ),
+                    reply_markup=InlineKeyboardMarkup(
+                        [[InlineKeyboardButton("Ссылка", url="https://qwertedrtvghjn.pythonanywhere.com/")]])
+                ),
                 InlineQueryResultArticle(
                     title="Получить информацию о себе",
                     description="из базы данных",
                     input_message_content=InputTextMessageContent(f"получить информацию об аккаунте из базы данных"),
                     reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Получить", callback_data="get_user")]])
-                    ),
+                ),
                 InlineQueryResultArticle(
                     title="Сгенерировать картинку",
                     description="ждем фикса от пирограма",
                     input_message_content=InputTextMessageContent(f"Генерация картинки, запрос: **{inline.query}**"),
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Получить", callback_data=f"draw_img:{inline.query}")]])
-                    ),
+                    reply_markup=InlineKeyboardMarkup(
+                        [[InlineKeyboardButton("Получить", callback_data=f"draw_img:{inline.query}")]])
+                ),
                 InlineQueryResultArticle(
                     title="Гпт ответ",
                     description="работает",
-                    input_message_content=InputTextMessageContent(f"Генерация ответа от Chat GPT, запрос: **{inline.query}**"),
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Получить", callback_data=f"gptchat:{inline.query}")]])
-                    ),
+                    input_message_content=InputTextMessageContent(
+                        f"Генерация ответа от Chat GPT, запрос: **{inline.query}**"),
+                    reply_markup=InlineKeyboardMarkup(
+                        [[InlineKeyboardButton("Получить", callback_data=f"gptchat:{inline.query}")]])
+                ),
                 InlineQueryResultArticle(
                     title="Курс валют",
                     description="Напишите количество",
@@ -372,7 +356,7 @@ async def answering(client, inline):
                     reply_markup=InlineKeyboardMarkup([
                         [InlineKeyboardButton(f"{i}", f"{i}:{inline.query}") for i in mon],
                         [InlineKeyboardButton("Получить", callback_data=f"valute")]])
-                    )
+                )
             ],
             cache_time=1
         )
@@ -382,9 +366,5 @@ async def answering(client, inline):
         print(str(e))
 
 
-
-
-
 print("bot started work")
 app.run()
-

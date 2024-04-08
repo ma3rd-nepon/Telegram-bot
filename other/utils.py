@@ -2,11 +2,13 @@ from dotenv import dotenv_values
 from freeGPT import AsyncClient
 from io import BytesIO
 from PIL import Image
+from .async_requests import Responser
 
-import requests
 import subprocess
 
 config = dotenv_values(".env")
+requests = Responser()
+
 
 def get_from_config(query):
     """Get variable from .env config"""
@@ -16,72 +18,55 @@ def get_from_config(query):
         result = "not found"
     return result
 
+
 url = get_from_config("rest_url")
 api = get_from_config("api")
 ta = "```"
 com_str = "@app.on_message(filters.command("
 
 
-def get_user(message):
+async def add_user(js):
+    resp = await requests.post(f"{url}/users", json=js)
+    return resp.json()
+
+
+async def get_user(message):
     """Get user from database"""
     user_id = message.from_user.id
-    response = requests.get(f"{url}/user/get/{api}/{user_id}")
-    if response.json().get("error") == None:
+    response = await requests.get(f"{url}/users", params={"type": "user", "telegram_id": f"{user_id}"})
+    if response.json().get("error") is None:
         user = response.json()
     else:
         data = {
             "telegram_id": user_id,
             "name": message.from_user.first_name,
-            "registered": 0
         }
-        resp = requests.post(f"{url}/user/add/{api}", json=data)
+        resp = await add_user(data)
+        print(resp)
         user = data
-    
+
     return user
 
 
-def get_userinfo(user_id):
-    """Get user info bu tg id"""
-    response = requests.get(f"{url}/user/get/{api}/{user_id}")
-    if response.json().get("error") == None:
-        user = response.json()
-        return user
-    else:
-        data = {
-            "telegram_id": user_id,
-            "name": message.from_user.first_name,
-            "registered": 0
-        }
-        resp = requests.post(f"{url}/user/add/{api}", json=data)
-
-        return "Вас нет в базе данных"
-
-
-def get_all_users(type_of_users):
+async def get_all_users(type_of_users):
     """Get all users from db (site or bot)"""
-    response = requests.get(f"{url}/user/get_all/{api}/{type_of_users}")
-    if response.ok:
+    response = await requests.get(f"{url}/users", params={"type": f"{type_of_users}"})
+    if response.status == 200:
         return response.json()
     return {"error": "Not found"}
 
 
-def get_user_by_uid(UID):
-    """Get user site account by his uid"""
-    response = requests.get(f"{url}/user/get_by_api/{api}/{UID}")
-    if response.ok:
+async def get_user_by_token(token):
+    """Get user site account by his token"""
+    response = await requests.get(f"{url}/users", params={"type": "user", "token": f"{token}"})
+    if response.status == 200:
         return response.json()
     return {"error": "Not found"}
 
 
-async def question(message, text, quiz):
-    """Quiz question from old settings"""
-    answer = await quiz.ask(message, text)
-    return answer
-
-
-def edit_user(user_id, data):
+async def edit_user(data):
     """Edit user"""
-    response = requests.post(f"{url}/user/edit/{api}/{user_id}", json=data)
+    response = await requests.put(f"{url}/users", json=data)
     if response.json() == {"status": "OK"}:
         return True
     return False

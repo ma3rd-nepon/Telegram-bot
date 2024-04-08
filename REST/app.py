@@ -76,7 +76,6 @@ def check_profile():
     return render_template("profile.html", form=form)
 
 
-
 @app.route('/register', methods=['GET', 'POST'])
 def reqister():
     try:
@@ -140,19 +139,31 @@ def tgidset():
 
     db_sess = db_session.create_session()
 
-    if current_user.telegram_id != 0:
-        return jsonify({"notice": "you already have telegram_id"})
+    # if current_user.telegram_id != 0:
+    #     return jsonify({"notice": "you already have telegram_id"})
 
     form = SetTelegramId()
     if form.validate_on_submit():
         try:
-            user = db_sess.query(User).filter(User.id == current_user.id).update({"telegram_id": form.telegram_id.data})
+            result = "ID изменен" if current_user != 0 else "ID установлен"
+
+            db_sess.query(User).filter(User.id == current_user.id).update(
+                {"telegram_id": int(form.telegram_id.data)})
             db_sess.commit()
-        except Exception as e:
-            return render_template('set_telegram_id_page.html', title='Аавывалоыв', form=form, message=str(e))
+            raise WindowsError(result)
+        except (ValueError, WindowsError) as e:
+            name = type(e).__name__
+            if name == "ValueError":
+                message = "Напишите числовое значение ID, без букв"
+            else:
+                message = str(e)
+
+            return render_template('set_telegram_id_page.html',
+                                   title='Аавывалоыв',
+                                   form=form,
+                                   message=message)
 
     return render_template('set_telegram_id_page.html', title='Аавывалоыв', form=form)
-
 
 
 @app.route("/users", methods=["GET", "POST", "PUT", "DELETE"])
@@ -201,6 +212,7 @@ def users_list():
 
         case "POST":
             try:
+                print("asdkjasd", request.headers)
                 js = request.get_json(force=True)
             except:
                 return jsonify({"error": "No JSON"})
@@ -215,21 +227,26 @@ def users_list():
             return jsonify({"status": "OK"})
 
         case "PUT":
+            token = request.args.get("token")
+            telegram_id = request.args.get("telegram_id")
             try:
                 js = request.get_json(force=True)
             except:
                 return jsonify({"error": "No JSON"})
 
             try:
-                user = db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).update(js)
+                user = db_sess.query(BotUser).filter(BotUser.telegram_id == telegram_id).update(js)
                 db_sess.commit()
                 return jsonify({"status": "OK"})
             except Exception as e:
                 return jsonify({"error": str(e)})
 
         case "DELETE":
+            token = request.args.get("token")
+            telegram_id = request.args.get("telegram_id")
+
             try:
-                user = db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).first().delete()
+                user = db_sess.query(BotUser).filter(BotUser.telegram_id == telegram_id).first().delete()
                 db_sess.commit()
                 return jsonify({"status": "OK"})
             except Exception as e:
