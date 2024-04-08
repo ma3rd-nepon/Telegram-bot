@@ -42,8 +42,16 @@
                     <p class="text-muted">{{ form.position }}</p>
                   </div>
                   <div class="col-6 mb-3">
-                    <h6>Тема профиля</h6>
-                    <p class="text-muted">Светлая, 2</p>
+                    <h6>Telegram id</h6>
+                    {% if form.is_authorized %}
+                      {% if form.tg_id != 0 %}
+                        <p class="text-muted">{{ form.tg_id }}</p>
+                      {% else %}
+                        <a class="btn btn-tertiary" href="/set_tg_id">Указать</a>
+                      {% endif %}
+                    {% else %}
+                      <p class="text-muted">Не указан</p>
+                    {% endif %}
                   </div>
                 </div>
                 {% if not form.is_authorized %}

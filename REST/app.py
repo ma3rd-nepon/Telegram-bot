@@ -5,8 +5,8 @@ from flask import *
 
 from data import db_session
 from data.users import User
-from data.util import get_special_key, dictify_user, dictify_bot
-from forms.user import RegisterForm, LoginForm, Profile
+from data.util import get_special_key
+from forms.user import RegisterForm, LoginForm, Profile, SetTelegramId
 from data.bot_users import BotUser
 
 import json
@@ -57,12 +57,11 @@ def check_profile():
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
     if user_id is not None:
-        data = dictify_user(db_sess.query(User).filter(User.id == user_id).first())
+        data = db_sess.query(User).filter(User.id == user_id).first().dict()
         data["auth"] = True
         data["bio"] = profiles_bio[int(data.get("position"))]
-        form = Profile(data)
     else:
-        unknown_user = {
+        data = {
                 "name": "Неизвестный", 
                 "surname": "Пользователь", 
                 "position": "0", 
@@ -70,9 +69,10 @@ def check_profile():
                 "auth": False,
                 "email": "None",
                 "special_api": "У вас нет его",
-                "bio": profiles_bio[0]
+                "bio": profiles_bio[0],
+                "telegram_id": 0
                 }
-        form = Profile(unknown_user)
+    form = Profile(data)
     return render_template("profile.html", form=form)
 
 
@@ -133,148 +133,111 @@ def login():
     return render_template('login.html', title='Авторизация', form=form)
 
 
-@app.route("/user/add/<uid>", methods=['POST'])
-def add_user_to_db(uid):
+@app.route("/set_tg_id", methods=["GET", "POST"])
+def tgidset():
+    if not current_user.is_authenticated:
+        return jsonify({"error": "login pls"})
+
     db_sess = db_session.create_session()
-    user_id = current_user.get_id()
-    try:
-        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
-        user_uid = user.get('special_api')
-        user_pos = user.get("position")
-    except:
-        return jsonify({"error": "wrong UID"})
 
-    if user_pos < 2:
-        return jsonify({"error": f"The required access level - 2, you have the {user_pos} level."})
-    else:
+    if current_user.telegram_id != 0:
+        return jsonify({"notice": "you already have telegram_id"})
+
+    form = SetTelegramId()
+    if form.validate_on_submit():
         try:
-            js = request.get_json(force=True)
-        except:
-            return jsonify({"error": "No JSON"})
-
-        bot_user = BotUser(
-            telegram_id=int(js.get('telegram_id')),
-            name=js.get('name'),
-            status=js.get('status')
-            )
-        db_sess.add(bot_user)
-        db_sess.commit()
-        return jsonify({"status": "OK"})
-
-
-@app.route("/user/get/<uid>/<tg_id>", methods=['GET', 'POST'])
-def get_user_from_db(uid, tg_id):
-    db_sess = db_session.create_session()
-    user_id = current_user.get_id()
-    try:
-        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
-        user_uid = user.get("UID")
-        user_pos = user.get("position")
-    except Exception as e:
-        print(e)
-        return jsonify({"error": "wrong UID"})
-    else:
-        try:
-            user = dictify_bot(db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).first())
-            return jsonify(user)
-        except Exception as e:
-            return jsonify({"error": "no users with this ID were found"})
-
-
-@app.route("/user/get_by_api/<uid>/<target_uid>", methods=['GET', 'POST'])
-def get_user_by_api_from_db(uid, target_uid):
-    db_sess = db_session.create_session()
-    try:
-        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
-        user_uid = user.get("UID")
-        user_pos = user.get("position")
-    except:
-        return jsonify({"error": "wrong UID"})
-
-    if user_pos < 2:
-        return jsonify({"error": f"The required access level - 2, you have the {user_pos} level."})
-    else:
-        user = dictify_user(db_sess.query(User).filter(User.special_api == target_uid).first())
-        return jsonify(user)
-
-
-@app.route("/user/edit/<uid>/<tg_id>", methods=['GET', 'POST'])
-def edit_user_uid(uid, tg_id):
-    db_sess = db_session.create_session()
-    try:
-        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
-        user_uid = user.get("UID")
-        user_pos = user.get("position")
-    except:
-        return jsonify({"error": "wrong UID"})
-
-    if user_pos < 2:
-        return jsonify({"error": f"The required access level - 2, you have the {user_pos} level."})
-    else:
-        try:
-            js = request.get_json(force=True)
-        except:
-            return jsonify({"error": "No JSON"})
-        try:
-            user = db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).update(js)
+            user = db_sess.query(User).filter(User.id == current_user.id).update({"telegram_id": form.telegram_id.data})
             db_sess.commit()
-            return jsonify({"status": "OK"})
         except Exception as e:
-            return jsonify({"error": str(e)})
-        
+            return render_template('set_telegram_id_page.html', title='Аавывалоыв', form=form, message=str(e))
+
+    return render_template('set_telegram_id_page.html', title='Аавывалоыв', form=form)
 
 
-@app.route("/user/get_all/<uid>/<t>", methods=['GET', 'POST'])
-def get_all_users_from_db(uid, t):
+
+@app.route("/users", methods=["GET", "POST", "PUT", "DELETE"])
+def users_list():
     db_sess = db_session.create_session()
-    user_id = current_user.get_id()
-    try:
-        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
-        user_uid = user.get("UID")
-        user_pos = user.get("position")
-    except:
-        return jsonify({"error": "wrong UID"})
+    match request.method:
+        case "GET":
+            type_of_list = request.args.get("type")
+            if type_of_list is None:
+                return jsonify({"error": "/users?type=<type of users list>"})
 
-    if user_pos < 2:
-        return jsonify({"error": f"The required access level - 2, you have the {user_pos} level."})
-    else:
-        dictionary = dict()
-        if t == "site":
-            user = db_sess.query(User).all()
-            for u in user:
-                dictionary[user.index(u)] = dictify_user(u)
+            elif type_of_list == "site":
+                dictionary = dict()
+                user = db_sess.query(User).all()
+                for u in user:
+                    dictionary[user.index(u)] = u.dict()
+
+            elif type_of_list == "bot":
+                dictionary = dict()
+                user = db_sess.query(BotUser).all()
+                for u in user:
+                    dictionary[user.index(u)] = u.dict()
+
+            elif type_of_list == "user":
+                token = request.args.get("token")
+                telegram_id = request.args.get("telegram_id")
+
+                if telegram_id is not None:
+                    try:
+                        dictionary = db_sess.query(BotUser).filter(BotUser.telegram_id == telegram_id).first().dict()
+                    except Exception as e:
+                        dictionary = {"error": str(e)}
+
+                elif token is not None:
+                    try:
+                        dictionary = db_sess.query(User).filter(User.special_api == token).first().dict()
+                    except Exception as e:
+                        dictionary = {"error": str(e)}
+
+                else:
+                    dictionary = {"error": "use telegram id or token in params in URL"}
+            else:
+                dictionary = {"error": "error"}
+
             return jsonify(dictionary)
 
-        elif t == "bot":
-            user = db_sess.query(BotUser).all()
-            for u in user:
-                dictionary[user.index(u)] = dictify_bot(u)
-            return jsonify(dictionary)
-        else:
-            return "error"
+        case "POST":
+            try:
+                js = request.get_json(force=True)
+            except:
+                return jsonify({"error": "No JSON"})
 
-
-@app.route("/user/delete/<uid>/<tg_id>", methods=['GET', 'POST'])
-def delete_user_from_db(uid, tg_id):
-    db_sess = db_session.create_session()
-    user_id = current_user.get_id()
-    try:
-        user = dictify_user(db_sess.query(User).filter(User.special_api == uid).first())
-        user_uid = user.get("UID")
-        user_pos = user.get("position")
-    except:
-        return jsonify({"error": "wrong UID"})
-
-    if user_pos < 4:
-        return jsonify({"error": f"The required access level - 3, you have the {user_pos} level."})
-    else:
-        try:
-            user = db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).first().delete()
+            bot_user = BotUser(
+                telegram_id=int(js.get('telegram_id')),
+                name=js.get('name'),
+                status=js.get('status')
+                )
+            db_sess.add(bot_user)
             db_sess.commit()
             return jsonify({"status": "OK"})
-        except Exception as e:
-            return jsonify({"error": f"{e}"})
-            
+
+        case "PUT":
+            try:
+                js = request.get_json(force=True)
+            except:
+                return jsonify({"error": "No JSON"})
+
+            try:
+                user = db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).update(js)
+                db_sess.commit()
+                return jsonify({"status": "OK"})
+            except Exception as e:
+                return jsonify({"error": str(e)})
+
+        case "DELETE":
+            try:
+                user = db_sess.query(BotUser).filter(BotUser.telegram_id == tg_id).first().delete()
+                db_sess.commit()
+                return jsonify({"status": "OK"})
+            except Exception as e:
+                return jsonify({"error": f"{e}"})
+
+        case _:
+            return jsonify({"error": "error"})
+
 
 @app.route("/terms_of_use", methods=["GET"])
 def terms_pf_use_mysite():
@@ -289,7 +252,7 @@ def logout():
 
 
 def main():
-    db_session.global_init("mysite/db/database.db")
+    db_session.global_init("db/database.db")
 
     db_sess = db_session.create_session()
     db_sess.commit()
@@ -304,3 +267,8 @@ def main():
     # user.set_password("no_iii12345")
     # db_sess.add(user)
     # db_sess.commit()
+
+    app.run()
+
+
+main()

@@ -21,6 +21,11 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Войти')
 
 
+class SetTelegramId(FlaskForm):
+    telegram_id = StringField('Ваш ид', validators=[DataRequired()])
+    submit = SubmitField('Отправить')
+
+
 class Profile:
     def __init__(self, js):
         self.is_authorized = js.get("auth")
@@ -28,7 +33,8 @@ class Profile:
         self.name = js.get("name")
         self.surname = js.get("surname")
         self.position = js.get("position")
-        self.login_date = js.get("login date")
+        self.login_date = js.get("modify_date")
         self.email = js.get("email")
         self.special_api = js.get("special_api")
         self.bio = js.get("bio")
+        self.tg_id = js.get("telegram_id")

@@ -16,8 +16,7 @@ def get_from_config(query):
         result = "not found"
     return result
 
-
-url = "https://qwertedrtvghjn.pythonanywhere.com"
+url = get_from_config("rest_url")
 api = get_from_config("api")
 ta = "```"
 com_str = "@app.on_message(filters.command("

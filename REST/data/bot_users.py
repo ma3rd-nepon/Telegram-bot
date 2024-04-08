@@ -22,11 +22,15 @@ class BotUser(SqlAlchemyBase, UserMixin):
     registered = sqlalchemy.Column(sqlalchemy.Integer, default=0)
     skey = sqlalchemy.Column(sqlalchemy.String, default="None")
 
-    def __repr__(self):
-        return f"{self.telegram_id};{self.name};{self.status};{self.registered};{self.skey}"
-
-    def fullname(self):
-        return f'{self.surname} {self.name}'
-
     def promote_to(self, role):
-        self.status_in_bot = role
+        self.status = role
+
+    def dict(self):
+        data = {
+            "id": self.id,
+            "telegram_id": self.telegram_id,
+            "name": self.name,
+            "status": self.status,
+            "registered": self.registered
+        }
+        return data
