@@ -13,13 +13,13 @@ class Responser:
 
     async def post(self, url, json=None, params=None):
         async with httpx.AsyncClient() as session:
-            response = await session.post(url, data=json, params=params)
+            response = await session.post(url, json=json, params=params)
             self.okkk(response.status_code)
             return response
 
     async def put(self, url, json=None, params=None):
         async with httpx.AsyncClient() as session:
-            response = await session.put(url, data=json, params=params)
+            response = await session.put(url, json=json, params=params)
             self.okkk(response.status_code)
             return response
 

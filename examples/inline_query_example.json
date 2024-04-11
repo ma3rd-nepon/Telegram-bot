@@ -3,7 +3,7 @@
     "id": "5337594979726620847",
     "from_user": {
         "_": "User",
-        "id": USER_ID
+        "id": 1234567890
         "is_self": false,
         "is_contact": false,
         "is_mutual_contact": false,

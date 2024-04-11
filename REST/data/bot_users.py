@@ -21,6 +21,7 @@ class BotUser(SqlAlchemyBase, UserMixin):
                                     default=datetime.now)
     registered = sqlalchemy.Column(sqlalchemy.Integer, default=0)
     skey = sqlalchemy.Column(sqlalchemy.String, default="None")
+    language = sqlalchemy.Column(sqlalchemy.String, default='ru')
 
     def promote_to(self, role):
         self.status = role
@@ -31,6 +32,7 @@ class BotUser(SqlAlchemyBase, UserMixin):
             "telegram_id": self.telegram_id,
             "name": self.name,
             "status": self.status,
-            "registered": self.registered
+            "registered": self.registered,
+            "language": self.language
         }
         return data

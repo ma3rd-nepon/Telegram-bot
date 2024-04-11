@@ -28,19 +28,31 @@ app = Client(name=get_from_config("name"),
 quiz = patch(app)
 
 
-async def main_settings(message, send=True):
+async def main_settings(message, callback=None, send=True) -> None:
+    user_language = message.from_user.language_code
+    if user_language is None and callback is not None:
+        user_language = callback.from_user.language_code
     markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Сайт", callback_data="site"), InlineKeyboardButton("Язык", callback_data="language")],
-        [InlineKeyboardButton("Запрос на повышение", callback_data="promote")]
+        [InlineKeyboardButton(translate("site", user_language), callback_data="site"),
+         InlineKeyboardButton(translate("language", user_language), callback_data="language")],
+        [InlineKeyboardButton(translate("promote", user_language), callback_data="promote")]
     ])
+    params = {
+        "chat_id": message.chat.id,
+        "text": translate("bot_settings", user_language),
+        "reply_markup": markup
+    }
     if send:
-        await app.send_message(chat_id=message.chat.id, text="Настройки бота", reply_markup=markup)
+        func = app.send_message
+
     else:
-        await app.edit_message_text(chat_id=message.chat.id, message_id=message.id, text="Настройки бота",
-                                    reply_markup=markup)
+        func = app.edit_message_text
+        params["message_id"] = message.id
+
+    await func(**params)
 
 
-async def edit_inline_query_likes_buttons(callback):
+async def edit_inline_query_likes_buttons(callback) -> None:
     global likes
     like = 0
     dislike = 0
@@ -55,19 +67,25 @@ async def edit_inline_query_likes_buttons(callback):
     ]))
 
 
+@app.on_message(filters.command("message", command_prefix))
+async def ksjdk(_, message) -> None:
+    await message.reply(message)
+
+
 @app.on_message(filters.command("start", prefix))  # старт
-async def start_function(client, message):
+async def start_function(_, message) -> None:
     user_id = message.from_user.id
+    user_language = "ru"
     user = await get_user(message)
     try:
         name = user["name"]
     except:
         name = message.from_user.first_name
-    await message.reply("Рад вас видеть, {}. Чтобы настроить бота для себя, напишите /setting".format(name))
+    await message.reply(str(translate("welcome", user_language)).format(name))
 
 
 @app.on_message(filters.command("profile", prefix))  # показать ваш профиль
-async def start_dialog(client, message):
+async def show_profile(_, message) -> None:
     user_id = message.from_user.id
     user = await get_user(message)
     result = f"""
@@ -81,9 +99,11 @@ DB Token - {user['skey']}
 
 
 @app.on_message(filters.command("commands", prefix))  # список всех команд
-async def return_all_comms(client, message):
-    result = f"{ta}shell\nСписок всех доступных команд\n\n"
-    coms = terminal(f'cat "main.py" | grep "{com_str}"')
+async def return_all_comms(_, message) -> None:
+    user_language = message.from_user.language_code
+
+    result = f"{ta}shell\n{translate('commands_list', user_language)}\n\n"
+    coms = await terminal(f'cat "main.py" | grep "{com_str}"')
     coms_len = len(coms.split("\n")) - 1
     for i in coms.split("\n"):
         if len(i.rstrip()) == 0:
@@ -97,7 +117,7 @@ async def return_all_comms(client, message):
         if "#" in i:
             result += i.split('#')[1]
         else:
-            result += " Нет описания"
+            result += f" {translate('no_desc', user_language)}"
         result += "\n"
     result += f"\nВсего {coms_len} команд."
     result += ta
@@ -106,16 +126,18 @@ async def return_all_comms(client, message):
 
 
 @app.on_message(filters.command("me", command_prefix))
-async def get_me(client, message):
+async def get_me(_, message) -> None:
     user = await get_user(message)
     await message.reply(f"{ta}shell\n{user}{ta}")
 
 
 @app.on_message(filters.command("terminal", command_prefix))
-async def get_terminal_command(client, message):
+async def get_terminal_command(_, message) -> None:
+    user_language = message.from_user.language_code
     user = await get_user(message)
+
     if user.get("status") != "creator":
-        await message.reply("Вам недоступна данная функция")
+        await message.reply(str(translate("func_n_a", user_language)))
         return
     command = " ".join(message.command[1:])  # message.text.split == message.command
     try:
@@ -125,30 +147,34 @@ async def get_terminal_command(client, message):
 
 
 @app.on_message(filters.command("setting", prefix))  # настройка бота через инлайн кнопки
-async def new_settings(client, message):
-    await main_settings(message, True)
+async def new_settings(_, message) -> None:
+    await main_settings(message, send=True)
 
 
 @app.on_message(filters.command("exit", command_prefix))  # выйти в окно
-async def on_exit_bot(client, message):
+async def on_exit_bot(_, message) -> None:
+    user_language = message.from_user.language_code
     user = await get_user(message)
+
     if user['status'] != "creator":
-        await message.reply("у вас нет прав")
+        await message.reply(translate("wrong_com", user_language))
         return
     exit()
 
 
 @app.on_message(filters.command("gpt", prefix))  # омг гпт чат
-async def chat_gpt_answer(client, message):
+async def chat_gpt_answer(_, message) -> None:
+    user_language = message.from_user.language_code
+
     result = await get_cp_response(" ".join(message.command[1:]))
     if "error - " in result:
         await app.send_message(chat_id=get_from_config("owner"), text=result)
-        result = "Произошла ошибка, попробуйте позже"
+        result = translate("error", user_language)
     await message.reply(result)
 
 
 @app.on_message(filters.command("image", prefix))  # генерация картинок (медленно)
-async def draw_prompt(client, message):
+async def draw_prompt(_, message) -> None:
     prompt = " ".join(message.command[1:])
     if prompt == '':
         return
@@ -157,7 +183,8 @@ async def draw_prompt(client, message):
 
 
 @app.on_message(filters.command("курс", prefix))  # узнать текущий курс валют
-async def get_course(client, message):
+async def get_course(_, message) -> None:
+    user_language = message.from_user.language_code
     try:
         if len(message.command) > 1:
             val = message.command[1]
@@ -171,21 +198,22 @@ async def get_course(client, message):
             val, count = 'usd', 1
         result = course(val.upper(), count)
     except Exception as e:
-        result = "Ошибка, видимо вы ввели запрос неправильно.\nПример: /курс BYN 1000"
+        result = translate("course_error", user_language)
     await message.reply(result)
 
 
 @app.on_message(filters.command("ip", prefix))  # пробить по айпи (хацкинг)
-async def get_ip_location(client, message):
+async def get_ip_location(_, message) -> None:
+    user_language = message.from_user.language_code
     try:
         result = location(message.text[4:])
     except Exception as e:
-        result = "Неправильный ввод айпи, либо такого не существует"
+        result = translate("wrong_com", user_language)
     await message.reply(result)
 
 
 @app.on_message(filters.command("погода", prefix))
-async def get_weather(client, message):
+async def get_weather(_, message) -> None:
     try:
         result = weather(message.text[8:])
     except:
@@ -194,33 +222,34 @@ async def get_weather(client, message):
 
 
 @app.on_callback_query()
-async def catch_callbacks(client, callback):
+async def catch_callbacks(_, callback) -> None:
+    user_language = callback.message.from_user.language_code
     try:
         if "PRIVATE" not in str(callback.message.chat.type):
             await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,
-                                        text="Настройки работают только в личных сообщениях с ботом!",
+                                        text=translate("only_in_ls", user_language),
                                         reply_markup=None)
             return
     except:
         pass
 
     if "to_main" in callback.data:
-        await main_settings(callback.message, False)
+        await main_settings(callback.message, send=False, callback=callback)
 
     elif "site" in callback.data:
         await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,
                                     text="Настройки сайта", reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton('Указать DB Token', callback_data="set_token")],
+                [InlineKeyboardButton('Найти свою страницу', callback_data="search_logined_account")],
                 [InlineKeyboardButton('Редактировать данные', callback_data="site_userdata")],
                 [InlineKeyboardButton("Назад", callback_data="to_main")]
             ]))
 
-    elif "set_token" in callback.data:
-        await callback.message.reply('как лучше придумать сюда ввод токена?')
+    elif "search_logined_account" in callback.data:
+        await callback.message.reply('потом')
 
     elif "promote" in callback.data:
         await callback.message.reply("Ожидайте ответа сервера...")
-        result = promots_add(callback.from_user.id)
+        result = await promots_add(callback.from_user.id)
         await asyncio.sleep(random.randint(1, 5))
         if result:
             text = "Принято! В ближайшем времени администраторы бота рассмотрят вашу заявку и ответят на нее."
@@ -230,23 +259,19 @@ async def catch_callbacks(client, callback):
 
     elif "language" in callback.data:
         await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,
-                                    text="Выберите подходящий для вас язык", reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton('🇷🇺', callback_data=f"set_ru_lang"),
-                 InlineKeyboardButton('🇺🇸', callback_data=f"set_en_lang")],
-                [InlineKeyboardButton("Назад", callback_data="to_main")]
-            ]))
+                                    text="Язык ставится такой же как в вашем приложении телеграма",
+                                    reply_markup=InlineKeyboardMarkup([
+                                        [InlineKeyboardButton("Назад", callback_data="to_main")]
+                                    ]))
 
     elif "set_ru_lang" in callback.data or "set_en_lang" in callback.data:
         await callback.message.reply("не")
 
-    elif "site_userdata" in callback.data:
-        await callback.message.reply("надо еще придумать как редактировать")
-
     elif callback.data == "dislike":
         if likes.get(callback.inline_message_id) is None:
             likes[callback.inline_message_id] = dict()
-        if likes[callback.inline_message_id].get(callback.from_user.id) == 'dislike':
-            likes[callback.inline_message_id][callback.from_user.id] = None
+        if 'dislike' in likes[callback.inline_message_id].get(callback.from_user.id):
+            likes[callback.inline_message_id][callback.from_user.id] = "nichego"
             return
         likes[callback.inline_message_id][callback.from_user.id] = 'dislike'
 
@@ -255,8 +280,8 @@ async def catch_callbacks(client, callback):
     elif callback.data == "like":
         if likes.get(callback.inline_message_id) is None:
             likes[callback.inline_message_id] = dict()
-        if likes[callback.inline_message_id].get(callback.from_user.id) == 'like':
-            likes[callback.inline_message_id][callback.from_user.id] = None
+        if 'like' in likes[callback.inline_message_id].get(callback.from_user.id):
+            likes[callback.inline_message_id][callback.from_user.id] = "nichego"
             return
         likes[callback.inline_message_id][callback.from_user.id] = 'like'
 
@@ -292,24 +317,24 @@ async def catch_callbacks(client, callback):
         if isinstance(a[1], int):
             result = course(a[0], int(a[1]))
         else:
-            result = "После юзернейма бота напишите сумму а не какой то текст!"
+            result = translate("error", lang)
         await app.edit_inline_text(inline_message_id=callback.inline_message_id, text=result, reply_markup=None)
 
     elif callback.data.split(":", maxsplit=1)[0] in mon:
         a = callback.data.split(":", maxsplit=1)
         if isinstance(a[1], int):
             await app.edit_inline_text(inline_message_id=callback.inline_message_id,
-                                       text=f"Сумма валюты написан некорректно", reply_markup=None)
+                                       text=f"Сумма валюты написанa некорректно", reply_markup=None)
             return
         vals[callback.inline_message_id] = callback.data
         await app.edit_inline_text(inline_message_id=callback.inline_message_id,
                                    text=f"Курс {a[0]}, в размере **{a[1]}**", reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(f"{i}", f"{i}:{a[1]}") for i in mon],
-                [InlineKeyboardButton("Получить", callback_data=f"valute")]]))
+                [InlineKeyboardButton(translate("get", user_language), callback_data=f"valute")]]))
 
 
 @app.on_inline_query()
-async def answering(client, inline):
+async def answering(_, inline) -> None:
     try:
         await inline.answer(
             results=[
@@ -322,27 +347,27 @@ async def answering(client, inline):
                          InlineKeyboardButton("👎", callback_data='dislike')]])
                 ),
                 InlineQueryResultArticle(
-                    title="Ссылка на сайт",
+                    title="Link for site",
                     description="чтоб не потерять",
                     input_message_content=InputTextMessageContent("Нажми на кнопку чтоб перейти на сайт"),
                     reply_markup=InlineKeyboardMarkup(
                         [[InlineKeyboardButton("Ссылка", url="https://qwertedrtvghjn.pythonanywhere.com/")]])
                 ),
                 InlineQueryResultArticle(
-                    title="Получить информацию о себе",
+                    title="Get your info",
                     description="из базы данных",
                     input_message_content=InputTextMessageContent(f"получить информацию об аккаунте из базы данных"),
                     reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Получить", callback_data="get_user")]])
                 ),
                 InlineQueryResultArticle(
-                    title="Сгенерировать картинку",
+                    title="Image Generation",
                     description="ждем фикса от пирограма",
                     input_message_content=InputTextMessageContent(f"Генерация картинки, запрос: **{inline.query}**"),
                     reply_markup=InlineKeyboardMarkup(
                         [[InlineKeyboardButton("Получить", callback_data=f"draw_img:{inline.query}")]])
                 ),
                 InlineQueryResultArticle(
-                    title="Гпт ответ",
+                    title="GPT Answer",
                     description="работает",
                     input_message_content=InputTextMessageContent(
                         f"Генерация ответа от Chat GPT, запрос: **{inline.query}**"),

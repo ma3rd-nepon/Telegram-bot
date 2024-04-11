@@ -1,0 +1,62 @@
+{
+  "bot_settings": {
+    "ru": "Настройки бота",
+    "en": "Bot Settings"
+  },
+  "site": {
+    "ru": "Сайт",
+    "en": "Site"
+  },
+  "welcome": {
+    "ru": "Рад вас видеть, {}.",
+    "en": "Glad to see u {}."
+  },
+  "commands_list": {
+    "ru": "Список всех доступных команд",
+    "en": "List of all commands"
+  },
+  "no_desc": {
+    "ru": "Нет описания",
+    "en": "No description"
+  },
+  "func_n_a": {
+    "ru": "У вас нет прав",
+    "en": "This function is not available for you"
+  },
+  "error": {
+    "ru": "Произошла ошибка, попробуйте позже",
+    "en": "Some error occured, try later"
+  },
+  "wrong_com": {
+    "ru": "Неправильный ввод команды",
+    "en": "Wrong command"
+  },
+  "only_in_ls": {
+    "ru": "Данная команда работает только в личных сообщениях с ботом",
+    "en": "This command work only in private messages with bot!"
+  },
+  "wait": {
+    "ru": "Ожидайте ответа сервера...",
+    "en": "Wait for server answer"
+  },
+  "course_error": {
+    "ru": "Hапишите сумму а не какой то текст!",
+    "en": "Write number, bot a text!"
+  },
+  "get": {
+    "ru": "Получить",
+    "en": "Get"
+  },
+  "back": {
+    "ru": "Назад",
+    "en": "Go back"
+  },
+  "language": {
+    "ru": "Язык",
+    "en": "Language"
+  },
+  "promote": {
+    "ru": "Запрос на повышение",
+    "en": "Promote request"
+  }
+}

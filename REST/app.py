@@ -30,6 +30,7 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
+    """Get logined user info (get() func becauser filter not work in this mesto)"""
     db_sess = db_session.create_session()
     return db_sess.query(User).get(user_id)
 
@@ -39,21 +40,25 @@ def load_user(user_id):
 
 @app.errorhandler(404)
 def not_found(error):
+    """404 handler alo"""
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 
 @app.errorhandler(400)
 def bad_request(_):
+    """400 handler"""
     return make_response(jsonify({'error': 'Bad Request'}), 400)
 
 
 @app.route("/")
 def index():
+    """Main site"""
     return render_template("index.html")
 
 
 @app.route("/profile")
 def check_profile():
+    """profile site"""
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
     if user_id is not None:
@@ -78,6 +83,7 @@ def check_profile():
 
 @app.route('/register', methods=['GET', 'POST'])
 def reqister():
+    """Register form"""
     try:
         if current_user.is_authenticated:
             return jsonify({"notice": "you already logined"})
@@ -111,6 +117,7 @@ def reqister():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Login form"""
     try:
         if current_user.is_authenticated:
             return jsonify({"notice": "you already logined"})
@@ -134,6 +141,7 @@ def login():
 
 @app.route("/set_tg_id", methods=["GET", "POST"])
 def tgidset():
+    """Make relation ship with site account and telegram"""
     if not current_user.is_authenticated:
         return jsonify({"error": "login pls"})
 
@@ -168,6 +176,7 @@ def tgidset():
 
 @app.route("/users", methods=["GET", "POST", "PUT", "DELETE"])
 def users_list():
+    """Get users list/definite user"""
     db_sess = db_session.create_session()
     match request.method:
         case "GET":
@@ -212,7 +221,6 @@ def users_list():
 
         case "POST":
             try:
-                print("asdkjasd", request.headers)
                 js = request.get_json(force=True)
             except:
                 return jsonify({"error": "No JSON"})
@@ -258,12 +266,14 @@ def users_list():
 
 @app.route("/terms_of_use", methods=["GET"])
 def terms_pf_use_mysite():
+    """terms of use"""
     return render_template("terms_of_use.html")
 
 
 @app.route('/logout')
 @login_required
 def logout():
+    """logout"""
     logout_user()
     return redirect("/")
 
