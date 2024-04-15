@@ -1,9 +1,10 @@
+import os
+
 from pyrogram import *
 from pyrogram.types import *
-from pyrocon import patch
-from other.utils import *
+from help.utils import *
 from other.info import *
-
+from help.code_compile import python_compile
 import asyncio
 import random
 
@@ -129,9 +130,14 @@ DB Token - {user['skey']}
 @app.on_message(filters.command("commands", prefix))  # список всех команд
 async def return_all_comms(_, message) -> None:
     user_language = message.from_user.language_code
-
+    if not os.name:  # dodelat
+        comm = "Get-Content"
+        comm2 = "Select-String"
+    else:
+        comm = "cat"
+        comm2 = "grep"
     result = f"{ta}shell\n{translate('commands_list', user_language)}\n\n"
-    coms = await terminal(f'cat "main.py" | grep "{com_str}"')
+    coms = await terminal(f'{comm} "main.py" | {comm2} "{com_str}"')
     coms_len = len(coms.split("\n")) - 1
     for i in coms.split("\n"):
         if len(i.rstrip()) == 0:
@@ -159,19 +165,20 @@ async def get_me(_, message) -> None:
     await message.reply(f"{ta}shell\n{user}{ta}")
 
 
-@app.on_message(filters.command("terminal", command_prefix))
+@app.on_message(filters.command("bash", command_prefix))
 async def get_terminal_command(_, message) -> None:
     user_language = message.from_user.language_code
-    user = await get_user(message)
 
-    if user.get("status") != "creator":
+    if str(message.from_user.id) != get_from_config("owner"):
         await message.reply(str(translate("func_n_a", user_language)))
         return
     command = " ".join(message.command[1:])  # message.text.split == message.command
     try:
-        await message.reply(terminal(command))
+        res = await terminal(command)
     except Exception as e:
-        await message.reply(str(e))
+        res = str(e)
+
+    await message.reply(res)
 
 
 @app.on_message(filters.command("setting", prefix))  # настройка бота через инлайн кнопки
@@ -393,7 +400,6 @@ async def catch_callbacks(_, callback) -> None:
             photo=result)
 
 
-
 @app.on_inline_query()
 async def answering(_, inline) -> None:
     try:
@@ -456,9 +462,49 @@ async def answering(_, inline) -> None:
 async def calculate(client, message):
     try:
         res = eval(" ".join(message.text.split(" ")[1:]))
-    except:
+    except Exception as e:
+        print(type(e).__name__)
         res = "Напиши пример правильно!"
     await message.reply(res)
 
-print("bot started work")
+
+@app.on_message(filters.command("send", command_prefix))
+async def send_file_to_tg(client, message):
+    try:
+        name = message.text.split(" ", maxsplit=1)[1]
+        await app.send_document(chat_id=message.chat.id,
+                                document=name)
+    except:
+        await message.reply("some error occured")
+
+
+@app.on_message(filters.command("download", command_prefix))
+async def download_file_to_disk(client, message):
+    try:
+        target = message.reply_to_message
+        if target is None:
+            return await message.reply("команду надо ответом на сообщение с файлом")
+        await app.download_media(target, block=False, file_name="trash")
+        res = "downloaded"
+    except Exception as e:
+        res = str(e)
+    return await message.reply(res)
+
+
+
+
+@app.on_message(filters.text)
+@app.on_edited_message(filters.text)
+async def run_python_code(client, message):
+    if message.text.startswith("!"):
+        text = message.text.split(" ", maxsplit=1)
+        lang = text[0][1:]
+        code = message.text.split(" ", maxsplit=1)[1]
+        result = await python_compile(code, lang)
+        await message.reply(result)
+        return
+    return
+
+
+print("bot started")
 app.run()

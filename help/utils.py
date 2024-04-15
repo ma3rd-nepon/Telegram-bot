@@ -3,7 +3,7 @@ from freeGPT import AsyncClient
 from io import BytesIO
 from PIL import Image
 from yamager import Yamager
-from .async_requests import Responser
+from help.async_requests import Responser
 
 import subprocess
 import asyncio
@@ -13,7 +13,7 @@ import random
 config = dotenv_values(".env")
 requests = Responser()
 
-with open("other/language.json", "r") as file:
+with open("help/language.json", "r") as file:
     lang = json.load(file)
 
 
@@ -51,7 +51,7 @@ async def add_user(js) -> dict:
 
 
 async def get_user(message) -> dict:
-    """Get user from database"""
+    """Get user from DB"""
     user_id = message.from_user.id
     response = await requests.get(f"{url}/users", params={"type": "user", "telegram_id": f"{user_id}"})
     if response.json().get("error") is None:
@@ -99,12 +99,12 @@ async def terminal(command) -> str:
 
 async def promots_add(user_id) -> bool:
     """Add your promotion to queue, True if success"""
-    with open('other/promots.txt', 'r') as file:
+    with open('help/promots.txt', 'r') as file:
         f = ",".join(file.readlines())
         if str(user_id) in f:
             return False
 
-    with open('other/promots.txt', 'a') as file:
+    with open('help/promots.txt', 'a') as file:
         file.write(f'\n{user_id}')
         return True
 

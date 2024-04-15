@@ -11,9 +11,9 @@ class Responser:
             self.okkk(response.status_code)
             return response
 
-    async def post(self, url, json=None, params=None):
+    async def post(self, url, json=None, params=None, headers=None):
         async with httpx.AsyncClient() as session:
-            response = await session.post(url, json=json, params=params)
+            response = await session.post(url, json=json, params=params, headers=headers)
             self.okkk(response.status_code)
             return response
 
