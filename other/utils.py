@@ -1,13 +1,14 @@
-import json
-
 from dotenv import dotenv_values
 from freeGPT import AsyncClient
 from io import BytesIO
 from PIL import Image
+from yamager import Yamager
 from .async_requests import Responser
 
 import subprocess
 import asyncio
+import json
+import random
 
 config = dotenv_values(".env")
 requests = Responser()
@@ -126,3 +127,13 @@ async def draw(query, name) -> BytesIO:
     resp = await AsyncClient.create_generation("prodia", prompt)
     Image.open(BytesIO(resp)).save(f"{name}.jpg")
     return BytesIO(resp)
+
+
+async def search_photo(query):
+    try:
+        yan = Yamager()
+        images = yan.search_google_images(str(query))
+        # prprprpr
+        return random.choice(images)
+    except Exception as e:
+        return str(e)

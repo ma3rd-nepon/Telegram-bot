@@ -25,7 +25,6 @@ app = Client(name=get_from_config("name"),
              api_hash=get_from_config("api_hash"),
              bot_token=get_from_config("bot_token"),
              )
-quiz = patch(app)
 
 
 async def main_settings(message, callback=None, send=True) -> None:
@@ -52,6 +51,33 @@ async def main_settings(message, callback=None, send=True) -> None:
     await func(**params)
 
 
+async def image_menu(message, callback=None, send=True) -> None:
+    user_language = message.from_user.language_code
+    query = str(" ".join(message.text.split(" ")[1:]))
+    if user_language is None and callback is not None:
+        user_language = callback.from_user.language_code
+    markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton(translate("ImageAI", user_language), callback_data=f"image_draw:{query}"),
+         InlineKeyboardButton(translate("ImageSearch", user_language), callback_data=f"image_search:{query}")],
+        [InlineKeyboardButton(translate("exit", user_language), callback_data="exit")]
+    ])
+
+    params = {
+        "chat_id": message.chat.id,
+        "text": query,
+        "reply_markup": markup
+    }
+
+    if send:
+        func = app.send_message
+
+    else:
+        func = app.edit_message_text
+        params["message_id"] = message.id
+
+    await func(**params)
+
+
 async def edit_inline_query_likes_buttons(callback) -> None:
     global likes
     like = 0
@@ -68,6 +94,7 @@ async def edit_inline_query_likes_buttons(callback) -> None:
 
 
 @app.on_message(filters.command("message", command_prefix))
+@app.on_edited_message(filters.command("message", command_prefix))
 async def ksjdk(_, message) -> None:
     await message.reply(message)
 
@@ -85,6 +112,7 @@ async def start_function(_, message) -> None:
 
 
 @app.on_message(filters.command("profile", prefix))  # показать ваш профиль
+@app.on_edited_message(filters.command("profile", prefix))
 async def show_profile(_, message) -> None:
     user_id = message.from_user.id
     user = await get_user(message)
@@ -173,13 +201,14 @@ async def chat_gpt_answer(_, message) -> None:
     await message.reply(result)
 
 
-@app.on_message(filters.command("image", prefix))  # генерация картинок (медленно)
+@app.on_message(filters.command("image", prefix))  # картинки
 async def draw_prompt(_, message) -> None:
     prompt = " ".join(message.command[1:])
     if prompt == '':
+        await message.reply("запрос после команды напиши")
         return
-    result = await draw(prompt, str(message.id))
-    await app.send_photo(chat_id=message.chat.id, photo=result)
+
+    await image_menu(message, send=True)
 
 
 @app.on_message(filters.command("курс", prefix))  # узнать текущий курс валют
@@ -270,7 +299,7 @@ async def catch_callbacks(_, callback) -> None:
     elif callback.data == "dislike":
         if likes.get(callback.inline_message_id) is None:
             likes[callback.inline_message_id] = dict()
-        if 'dislike' in likes[callback.inline_message_id].get(callback.from_user.id):
+        if 'dislike' == likes[callback.inline_message_id].get(callback.from_user.id):
             likes[callback.inline_message_id][callback.from_user.id] = "nichego"
             return
         likes[callback.inline_message_id][callback.from_user.id] = 'dislike'
@@ -280,9 +309,11 @@ async def catch_callbacks(_, callback) -> None:
     elif callback.data == "like":
         if likes.get(callback.inline_message_id) is None:
             likes[callback.inline_message_id] = dict()
-        if 'like' in likes[callback.inline_message_id].get(callback.from_user.id):
+
+        if 'like' == likes[callback.inline_message_id].get(callback.from_user.id):
             likes[callback.inline_message_id][callback.from_user.id] = "nichego"
             return
+
         likes[callback.inline_message_id][callback.from_user.id] = 'like'
 
         await edit_inline_query_likes_buttons(callback)
@@ -331,6 +362,36 @@ async def catch_callbacks(_, callback) -> None:
                                    text=f"Курс {a[0]}, в размере **{a[1]}**", reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(f"{i}", f"{i}:{a[1]}") for i in mon],
                 [InlineKeyboardButton(translate("get", user_language), callback_data=f"valute")]]))
+
+    elif callback.data == "exit":
+        # await app.edit_message_text(callback.message.chat.id,
+        #                             text="ok", 
+        #                             reply_markup=None,
+        #                             message_id=callback.message.id)
+        await app.delete_messages(
+            chat_id=callback.message.chat.id, 
+            message_ids=[callback.message.id])
+
+        return
+
+    elif "image" in callback.data:
+        prompt = callback.data.split(":", maxsplit=1)[1]
+
+        if "image_draw" in callback.data:
+            result = await draw(prompt, str(callback.message.id))
+
+        if "image_search" in callback.data:
+            result = await search_photo(prompt)
+            # prprprpr
+        await app.delete_messages(
+            chat_id=callback.message.chat.id, 
+            message_ids=[callback.message.id])
+
+        await app.send_photo(
+            chat_id=callback.message.chat.id,
+            caption="your image",
+            photo=result)
+
 
 
 @app.on_inline_query()
@@ -390,6 +451,14 @@ async def answering(_, inline) -> None:
             return
         print(str(e))
 
+
+@app.on_message(filters.command("calc", prefix))
+async def calculate(client, message):
+    try:
+        res = eval(" ".join(message.text.split(" ")[1:]))
+    except:
+        res = "Напиши пример правильно!"
+    await message.reply(res)
 
 print("bot started work")
 app.run()

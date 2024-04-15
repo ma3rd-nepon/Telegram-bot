@@ -58,5 +58,17 @@
   "promote": {
     "ru": "Запрос на повышение",
     "en": "Promote request"
+  },
+  "exit": {
+    "ru": "Выход",
+    "en": "Exit"
+  },
+  "ImageAI": {
+    "ru": "Сгенерировать",
+    "en": "ImageAI"
+  },
+  "ImageSearch": {
+    "ru": "Найти",
+    "en": "Search"
   }
 }
