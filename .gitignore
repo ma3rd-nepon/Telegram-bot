@@ -2,7 +2,10 @@
 /other/.env
 .git
 test-pyrogram-bot.session
-/other/__pycache__/
+/help/__pycache__/
+/help/other/__pycache__/
 test-pyrogram-bot.session-journal
 test-pyrogram-bot.session-shm
 test-pyrogram-bot.session-wal
+.pyc
+__pycache__

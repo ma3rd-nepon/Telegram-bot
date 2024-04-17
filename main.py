@@ -2,11 +2,14 @@ import os
 
 from pyrogram import *
 from pyrogram.types import *
+from pyrogram.errors import MessageTooLong, MessageEmpty
 from help.utils import *
-from other.info import *
-from help.code_compile import python_compile
+from help.other.info import *
+from help.code_compile import c_compile
+from math import sqrt
 import asyncio
 import random
+import re
 
 prefix = "/"
 command_prefix = get_from_config("prefix")
@@ -79,6 +82,49 @@ async def image_menu(message, callback=None, send=True) -> None:
     await func(**params)
 
 
+def calc_btn(uid):
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("(", callback_data=f"calc;{uid};("),
+                InlineKeyboardButton(")", callback_data=f"calc;{uid};)"),
+                InlineKeyboardButton("CE", callback_data=f"calc;{uid};DEL"),
+                InlineKeyboardButton("C", callback_data=f"calc;{uid};C"),
+            ],
+            [
+                InlineKeyboardButton("1/x", callback_data=f"calc;{uid};**-1"),
+                InlineKeyboardButton("^2", callback_data=f"calc;{uid};**2"),
+                InlineKeyboardButton("√", callback_data=f"calc;{uid};sqrt"),
+                InlineKeyboardButton("÷", callback_data=f"calc;{uid};/"),
+            ],
+            [
+                InlineKeyboardButton("7", callback_data=f"calc;{uid};7"),
+                InlineKeyboardButton("8", callback_data=f"calc;{uid};8"),
+                InlineKeyboardButton("9", callback_data=f"calc;{uid};9"),
+                InlineKeyboardButton("×", callback_data=f"calc;{uid};*"),
+            ],
+            [
+                InlineKeyboardButton("4", callback_data=f"calc;{uid};4"),
+                InlineKeyboardButton("5", callback_data=f"calc;{uid};5"),
+                InlineKeyboardButton("6", callback_data=f"calc;{uid};6"),
+                InlineKeyboardButton("-", callback_data=f"calc;{uid};-"),
+            ],
+            [
+                InlineKeyboardButton("1", callback_data=f"calc;{uid};1"),
+                InlineKeyboardButton("2", callback_data=f"calc;{uid};2"),
+                InlineKeyboardButton("3", callback_data=f"calc;{uid};3"),
+                InlineKeyboardButton("+", callback_data=f"calc;{uid};+"),
+            ],
+            [
+                InlineKeyboardButton("%", callback_data=f"calc;{uid};%"),
+                InlineKeyboardButton("0", callback_data=f"calc;{uid};0"),
+                InlineKeyboardButton(".", callback_data=f"calc;{uid};."),
+                InlineKeyboardButton("=", callback_data=f"calc;{uid};="),
+            ],
+        ]
+    )
+
+
 async def edit_inline_query_likes_buttons(callback) -> None:
     global likes
     like = 0
@@ -94,7 +140,7 @@ async def edit_inline_query_likes_buttons(callback) -> None:
     ]))
 
 
-@app.on_message(filters.command("message", command_prefix))
+@app.on_message(filters.command("message", command_prefix)) # джсон сообщения
 @app.on_edited_message(filters.command("message", command_prefix))
 async def ksjdk(_, message) -> None:
     await message.reply(message)
@@ -122,7 +168,6 @@ async def show_profile(_, message) -> None:
 Зарегистрирован на сайте - {user['registered']}
 Статус в боте - {user['status']}
 Телеграм ID - {user['telegram_id']}
-DB Token - {user['skey']}
     """
     await message.reply(result)
 
@@ -130,42 +175,23 @@ DB Token - {user['skey']}
 @app.on_message(filters.command("commands", prefix))  # список всех команд
 async def return_all_comms(_, message) -> None:
     user_language = message.from_user.language_code
-    if not os.name:  # dodelat
-        comm = "Get-Content"
-        comm2 = "Select-String"
-    else:
-        comm = "cat"
-        comm2 = "grep"
-    result = f"{ta}shell\n{translate('commands_list', user_language)}\n\n"
-    coms = await terminal(f'{comm} "main.py" | {comm2} "{com_str}"')
-    coms_len = len(coms.split("\n")) - 1
-    for i in coms.split("\n"):
-        if len(i.rstrip()) == 0:
-            continue
-        if "command_prefix" in i:
-            result += command_prefix
-        else:
-            result += prefix
-        result += i.split('"')[1]
-        result += " -"
-        if "#" in i:
-            result += i.split('#')[1]
-        else:
-            result += f" {translate('no_desc', user_language)}"
-        result += "\n"
-    result += f"\nВсего {coms_len} команд."
-    result += ta
-    await message.reply(result)
+    await app.send_message(
+            chat_id=message.chat.id,
+            text="Тип команд",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("Обычные", "default_commands"), InlineKeyboardButton("Для админов", "admin_commands"), InlineKeyboardButton("Все", "all_commands")], 
+                [InlineKeyboardButton("Выход", callback_data="exit")]])
+            )
     return
 
 
-@app.on_message(filters.command("me", command_prefix))
+@app.on_message(filters.command("me", command_prefix)) # профиль в джсоне
 async def get_me(_, message) -> None:
     user = await get_user(message)
     await message.reply(f"{ta}shell\n{user}{ta}")
 
 
-@app.on_message(filters.command("bash", command_prefix))
+@app.on_message(filters.command("bash", command_prefix)) # терминал
 async def get_terminal_command(_, message) -> None:
     user_language = message.from_user.language_code
 
@@ -248,7 +274,7 @@ async def get_ip_location(_, message) -> None:
     await message.reply(result)
 
 
-@app.on_message(filters.command("погода", prefix))
+@app.on_message(filters.command("погода", prefix))  # узнать погоду в городе
 async def get_weather(_, message) -> None:
     try:
         result = weather(message.text[8:])
@@ -399,6 +425,67 @@ async def catch_callbacks(_, callback) -> None:
             caption="your image",
             photo=result)
 
+    elif "calc" in callback.data:
+        _, user_id, button = callback.data.split(";")
+
+        if callback.from_user.id != int(user_id):
+            return await callback.answer("Ти хто хлопец", show_alert=True, cache_time=5)
+
+        try:
+            text = callback.message.text.split("\n")[0].strip().split("=")[0].strip()
+            text = '' if f"Калькулятор {callback.from_user.first_name}" in text else text
+            inpt = text + callback.data
+            result = ""
+            stay = False
+
+            if button == "=":
+                result = evaluate(text)
+                text = ""
+
+            elif button == "DEL":
+                text = text[:-1]
+
+            elif button == "C":
+                text = ""
+
+            elif button == "sqrt":
+                result = sqrt(evaluate(text))
+                stay = True
+
+            elif button == "**2":
+                text = f"{text}**2"
+                result = evaluate(text)
+
+            elif button == "**-1":
+                text = f"{text}**-1"
+                result = evaluate(text)
+
+            else:
+                dot_dot_check = re.findall(r"(\d*\.\.|\d*\.\d+\.)", inpt)
+                opcheck = re.findall(r"([*/\+-]{2,})", inpt)
+                if not dot_dot_check and not opcheck:
+                    if strOperands := re.findall(r"(\.\d+|\d+\.\d+|\d+)", inpt):
+                        text += button
+                        result = evaluate(text)
+
+            text = f"{result}" if stay else f"{text:<50}"
+            if result:
+                if text:
+                    text += f"\n{result:>50}"
+                else:
+                    text = result
+            text += f"\n\nКалькулятор {callback.from_user.first_name}"
+            await callback.edit_message_text(
+                text=text,
+                parse_mode=pyrogram.enums.ParseMode.DISABLED,
+                reply_markup=calc_btn(callback.from_user.id))
+        except Exception as error:
+            print(error)
+
+    elif "_commands" in callback.data:
+        commands = await commands_list(callback.data, callback.from_user.language_code)
+        await callback.edit_message_text(text=str(commands), reply_markup=None)
+
 
 @app.on_inline_query()
 async def answering(_, inline) -> None:
@@ -458,33 +545,32 @@ async def answering(_, inline) -> None:
         print(str(e))
 
 
-@app.on_message(filters.command("calc", prefix))
-async def calculate(client, message):
-    try:
-        res = eval(" ".join(message.text.split(" ")[1:]))
-    except Exception as e:
-        print(type(e).__name__)
-        res = "Напиши пример правильно!"
-    await message.reply(res)
+@app.on_message(filters.command("calculator", prefix)) # калькулятор
+async def calculate_handler(client, message):
+    await message.reply(
+        text=f"Калькулятор {message.from_user.first_name}",
+        reply_markup=calc_btn(message.from_user.id))
 
 
-@app.on_message(filters.command("send", command_prefix))
+@app.on_message(filters.command("send", command_prefix)) # отправить файл с диска
 async def send_file_to_tg(client, message):
     try:
         name = message.text.split(" ", maxsplit=1)[1]
+        if ".env" in name or 'main.py' in name:
+            return await message.reply("no")
         await app.send_document(chat_id=message.chat.id,
                                 document=name)
     except:
         await message.reply("some error occured")
 
 
-@app.on_message(filters.command("download", command_prefix))
+@app.on_message(filters.command("download", command_prefix)) # скачать файл на диск
 async def download_file_to_disk(client, message):
     try:
         target = message.reply_to_message
         if target is None:
             return await message.reply("команду надо ответом на сообщение с файлом")
-        await app.download_media(target, block=False, file_name="trash")
+        await app.download_media(target, block=False)
         res = "downloaded"
     except Exception as e:
         res = str(e)
@@ -495,13 +581,23 @@ async def download_file_to_disk(client, message):
 
 @app.on_message(filters.text)
 @app.on_edited_message(filters.text)
-async def run_python_code(client, message):
+async def run_code(client, message) -> None:
     if message.text.startswith("!"):
         text = message.text.split(" ", maxsplit=1)
-        lang = text[0][1:]
-        code = message.text.split(" ", maxsplit=1)[1]
-        result = await python_compile(code, lang)
-        await message.reply(result)
+        lang = str(text[0][1:])
+        if len(text) > 1:
+            code = text[1]
+        else:
+            code = "нету кода"
+        result = await c_compile(code, lang)
+        try:
+            await message.reply(result)
+        except MessageTooLong:
+            with open("help/other/code/output.txt", "w+") as file:
+                file.write(result)
+            await app.send_document(chat_id=message.chat.id, document="help/other/code/output.txt")
+        except MessageEmpty:
+            await message.reply("no output")
         return
     return
 

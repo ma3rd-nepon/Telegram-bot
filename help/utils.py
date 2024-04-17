@@ -9,6 +9,7 @@ import subprocess
 import asyncio
 import json
 import random
+import os
 
 config = dotenv_values(".env")
 requests = Responser()
@@ -42,6 +43,8 @@ url = get_from_config("rest_url")
 api = get_from_config("api")
 ta = "```"
 com_str = "@app.on_message(filters.command("
+command_prefix = get_from_config("prefix")
+prefix = "/"
 
 
 async def add_user(js) -> dict:
@@ -137,3 +140,66 @@ async def search_photo(query):
         return random.choice(images)
     except Exception as e:
         return str(e)
+
+def evaluate(primer):
+    try:
+        return float(eval(primer))
+    except (SyntaxError, ZeroDivisionError):
+        return ""
+    except TypeError:
+        return float(eval(primer.replace('(', '*(')))
+    except Exception as e:
+        print(e)
+        return ""
+
+
+async def commands_list(type_of_commands, user_language):
+    if not os.name == "nt":
+        comm = "Get-Content"
+        comm2 = "Select-String"
+    else:
+        comm = "cat"
+        comm2 = "grep"
+    all_commands = ""
+    default_commands = ""
+    admin_commands = ""
+
+    coms = await terminal(f'{comm} "main.py" | {comm2} "{com_str}"')
+    coms_len = len(coms.split("\n")) - 1
+    for i in coms.split("\n"):
+        res = ''
+        if len(i.rstrip()) == 0:
+            continue
+        if "command_prefix" in i:
+            res += command_prefix
+        else:
+            res += prefix
+        res += i.split('"')[1]
+        res += " -"
+        if "#" in i:
+            res += i.split('#')[1]
+        else:
+            res += f" {translate('no_desc', user_language)}"
+        res += "\n"
+        if command_prefix in res:
+            admin_commands += res
+        else:
+            default_commands += res
+        all_commands += res
+
+    if type_of_commands == "admin_commands":
+        target = admin_commands.split('\n')
+        admin_commands += f"\nВсего {len(target) - 1} команд."
+        total_answer = admin_commands
+
+    elif type_of_commands == "all_commands":
+        target = all_commands.split('\n')
+        all_commands += f"\nВсего {len(target) - 1} команд."
+        total_answer = all_commands
+
+    else:
+        target = default_commands.split('\n')
+        default_commands += f"\nВсего {len(target) - 1} команд."
+        total_answer = default_commands
+
+    return total_answer
