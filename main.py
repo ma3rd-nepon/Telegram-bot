@@ -22,6 +22,7 @@ statuses = {
 
 likes = dict()
 vals = dict()
+inline_calc_text = dict()
 
 api_id = get_from_config("api_id")
 app = Client(name=get_from_config("name"),
@@ -82,44 +83,45 @@ async def image_menu(message, callback=None, send=True) -> None:
     await func(**params)
 
 
-def calc_btn(uid):
+def calc_btn(uid, toc="callback_") -> InlineKeyboardMarkup:
+    """Calculator buttons, toc - type of callback"""
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("(", callback_data=f"calc;{uid};("),
-                InlineKeyboardButton(")", callback_data=f"calc;{uid};)"),
-                InlineKeyboardButton("CE", callback_data=f"calc;{uid};DEL"),
-                InlineKeyboardButton("C", callback_data=f"calc;{uid};C"),
+                InlineKeyboardButton("(", callback_data=f"{toc}calc;{uid};("),
+                InlineKeyboardButton(")", callback_data=f"{toc}calc;{uid};)"),
+                InlineKeyboardButton("CE", callback_data=f"{toc}calc;{uid};DEL"),
+                InlineKeyboardButton("C", callback_data=f"{toc}calc;{uid};C"),
             ],
             [
-                InlineKeyboardButton("1/x", callback_data=f"calc;{uid};**-1"),
-                InlineKeyboardButton("^2", callback_data=f"calc;{uid};**2"),
-                InlineKeyboardButton("√", callback_data=f"calc;{uid};sqrt"),
-                InlineKeyboardButton("÷", callback_data=f"calc;{uid};/"),
+                InlineKeyboardButton("1/x", callback_data=f"{toc}calc;{uid};**-1"),
+                InlineKeyboardButton("^2", callback_data=f"{toc}calc;{uid};**2"),
+                InlineKeyboardButton("√", callback_data=f"{toc}calc;{uid};sqrt"),
+                InlineKeyboardButton("÷", callback_data=f"{toc}calc;{uid};/"),
             ],
             [
-                InlineKeyboardButton("7", callback_data=f"calc;{uid};7"),
-                InlineKeyboardButton("8", callback_data=f"calc;{uid};8"),
-                InlineKeyboardButton("9", callback_data=f"calc;{uid};9"),
-                InlineKeyboardButton("×", callback_data=f"calc;{uid};*"),
+                InlineKeyboardButton("7", callback_data=f"{toc}calc;{uid};7"),
+                InlineKeyboardButton("8", callback_data=f"{toc}calc;{uid};8"),
+                InlineKeyboardButton("9", callback_data=f"{toc}calc;{uid};9"),
+                InlineKeyboardButton("×", callback_data=f"{toc}calc;{uid};*"),
             ],
             [
-                InlineKeyboardButton("4", callback_data=f"calc;{uid};4"),
-                InlineKeyboardButton("5", callback_data=f"calc;{uid};5"),
-                InlineKeyboardButton("6", callback_data=f"calc;{uid};6"),
-                InlineKeyboardButton("-", callback_data=f"calc;{uid};-"),
+                InlineKeyboardButton("4", callback_data=f"{toc}calc;{uid};4"),
+                InlineKeyboardButton("5", callback_data=f"{toc}calc;{uid};5"),
+                InlineKeyboardButton("6", callback_data=f"{toc}calc;{uid};6"),
+                InlineKeyboardButton("-", callback_data=f"{toc}calc;{uid};-"),
             ],
             [
-                InlineKeyboardButton("1", callback_data=f"calc;{uid};1"),
-                InlineKeyboardButton("2", callback_data=f"calc;{uid};2"),
-                InlineKeyboardButton("3", callback_data=f"calc;{uid};3"),
-                InlineKeyboardButton("+", callback_data=f"calc;{uid};+"),
+                InlineKeyboardButton("1", callback_data=f"{toc}calc;{uid};1"),
+                InlineKeyboardButton("2", callback_data=f"{toc}calc;{uid};2"),
+                InlineKeyboardButton("3", callback_data=f"{toc}calc;{uid};3"),
+                InlineKeyboardButton("+", callback_data=f"{toc}calc;{uid};+"),
             ],
             [
-                InlineKeyboardButton("%", callback_data=f"calc;{uid};%"),
-                InlineKeyboardButton("0", callback_data=f"calc;{uid};0"),
-                InlineKeyboardButton(".", callback_data=f"calc;{uid};."),
-                InlineKeyboardButton("=", callback_data=f"calc;{uid};="),
+                InlineKeyboardButton("%", callback_data=f"{toc}calc;{uid};*0.01"),
+                InlineKeyboardButton("0", callback_data=f"{toc}calc;{uid};0"),
+                InlineKeyboardButton(".", callback_data=f"{toc}calc;{uid};."),
+                InlineKeyboardButton("=", callback_data=f"{toc}calc;{uid};="),
             ],
         ]
     )
@@ -140,7 +142,7 @@ async def edit_inline_query_likes_buttons(callback) -> None:
     ]))
 
 
-@app.on_message(filters.command("message", command_prefix)) # джсон сообщения
+@app.on_message(filters.command("message", command_prefix))  # джсон сообщения
 @app.on_edited_message(filters.command("message", command_prefix))
 async def ksjdk(_, message) -> None:
     await message.reply(message)
@@ -176,22 +178,23 @@ async def show_profile(_, message) -> None:
 async def return_all_comms(_, message) -> None:
     user_language = message.from_user.language_code
     await app.send_message(
-            chat_id=message.chat.id,
-            text="Тип команд",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("Обычные", "default_commands"), InlineKeyboardButton("Для админов", "admin_commands"), InlineKeyboardButton("Все", "all_commands")], 
-                [InlineKeyboardButton("Выход", callback_data="exit")]])
-            )
+        chat_id=message.chat.id,
+        text="Тип команд",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Обычные", "default_commands"), InlineKeyboardButton("Для админов", "admin_commands"),
+             InlineKeyboardButton("Все", "all_commands")],
+            [InlineKeyboardButton("Выход", callback_data="exit")]])
+    )
     return
 
 
-@app.on_message(filters.command("me", command_prefix)) # профиль в джсоне
+@app.on_message(filters.command("me", command_prefix))  # профиль в джсоне
 async def get_me(_, message) -> None:
     user = await get_user(message)
     await message.reply(f"{ta}shell\n{user}{ta}")
 
 
-@app.on_message(filters.command("bash", command_prefix)) # терминал
+@app.on_message(filters.command("bash", command_prefix))  # терминал
 async def get_terminal_command(_, message) -> None:
     user_language = message.from_user.language_code
 
@@ -258,7 +261,7 @@ async def get_course(_, message) -> None:
                 count = 1
         else:
             val, count = 'usd', 1
-        result = course(val.upper(), count)
+        result = await course(val.upper(), count)
     except Exception as e:
         result = translate("course_error", user_language)
     await message.reply(result)
@@ -268,7 +271,7 @@ async def get_course(_, message) -> None:
 async def get_ip_location(_, message) -> None:
     user_language = message.from_user.language_code
     try:
-        result = location(message.text[4:])
+        result = await location(message.text[4:])
     except Exception as e:
         result = translate("wrong_com", user_language)
     await message.reply(result)
@@ -277,7 +280,7 @@ async def get_ip_location(_, message) -> None:
 @app.on_message(filters.command("погода", prefix))  # узнать погоду в городе
 async def get_weather(_, message) -> None:
     try:
-        result = weather(message.text[8:])
+        result = await weather(message.text[8:])
     except:
         result = "Неправильно написан город либо его несуществует"
     await message.reply(result)
@@ -285,7 +288,10 @@ async def get_weather(_, message) -> None:
 
 @app.on_callback_query()
 async def catch_callbacks(_, callback) -> None:
-    user_language = callback.message.from_user.language_code
+    if callback.inline_message_id is None:
+        user_language = callback.message.from_user.language_code
+    else:
+        user_language = callback.from_user.language_code
     try:
         if "PRIVATE" not in str(callback.message.chat.type):
             await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,
@@ -402,7 +408,7 @@ async def catch_callbacks(_, callback) -> None:
         #                             reply_markup=None,
         #                             message_id=callback.message.id)
         await app.delete_messages(
-            chat_id=callback.message.chat.id, 
+            chat_id=callback.message.chat.id,
             message_ids=[callback.message.id])
 
         return
@@ -417,7 +423,7 @@ async def catch_callbacks(_, callback) -> None:
             result = await search_photo(prompt)
             # prprprpr
         await app.delete_messages(
-            chat_id=callback.message.chat.id, 
+            chat_id=callback.message.chat.id,
             message_ids=[callback.message.id])
 
         await app.send_photo(
@@ -429,12 +435,16 @@ async def catch_callbacks(_, callback) -> None:
         _, user_id, button = callback.data.split(";")
 
         if callback.from_user.id != int(user_id):
-            return await callback.answer("Ти хто хлопец", show_alert=True, cache_time=5)
+            return await callback.answer("Не тваи кнопки", show_alert=True, cache_time=5)
 
         try:
-            text = callback.message.text.split("\n")[0].strip().split("=")[0].strip()
-            text = '' if f"Калькулятор {callback.from_user.first_name}" in text else text
-            inpt = text + callback.data
+            if inline_calc_text.get(callback.inline_message_id) is None:
+                inline_calc_text[callback.inline_message_id] = ""
+
+            text = callback.message.text.split("\n")[0].strip().split("=")[0].strip() if callback.message \
+                else inline_calc_text.get(callback.inline_message_id).split("\n")[0].strip().split("=")[0].strip()
+            text = '' if f"Калькулятор" in text else text
+            target = text + callback.data
             result = ""
             stay = False
 
@@ -461,10 +471,10 @@ async def catch_callbacks(_, callback) -> None:
                 result = evaluate(text)
 
             else:
-                dot_dot_check = re.findall(r"(\d*\.\.|\d*\.\d+\.)", inpt)
-                opcheck = re.findall(r"([*/\+-]{2,})", inpt)
-                if not dot_dot_check and not opcheck:
-                    if strOperands := re.findall(r"(\.\d+|\d+\.\d+|\d+)", inpt):
+                tochki = re.findall(r"(\d*\.\.|\d*\.\d+\.)", target)
+                operators = re.findall(r"([/\+-]{2,})", target)
+                if not tochki and not operators:
+                    if re.findall(r"(\.\d+|\d+\.\d+|\d+)", target):
                         text += button
                         result = evaluate(text)
 
@@ -475,10 +485,25 @@ async def catch_callbacks(_, callback) -> None:
                 else:
                     text = result
             text += f"\n\nКалькулятор {callback.from_user.first_name}"
-            await callback.edit_message_text(
-                text=text,
-                parse_mode=pyrogram.enums.ParseMode.DISABLED,
-                reply_markup=calc_btn(callback.from_user.id))
+
+            edit_params = {
+                "text": text,
+                "parse_mode": pyrogram.enums.ParseMode.DISABLED
+            }
+
+            if "inline_calc" in callback.data:
+                edit_msg = app.edit_inline_text
+                edit_params["inline_message_id"] = callback.inline_message_id
+                markup = calc_btn(user_id, "inline_")
+            else:
+                edit_msg = callback.edit_message_text
+                markup = calc_btn(user_id)
+            edit_params["reply_markup"] = markup
+            aim = text.split("\n")[0].strip().split("=")[0].strip()
+
+            inline_calc_text[callback.inline_message_id] = aim if aim != '' else text.split("\n")[1].strip()
+            await edit_msg(**edit_params)
+
         except Exception as error:
             print(error)
 
@@ -535,6 +560,12 @@ async def answering(_, inline) -> None:
                     reply_markup=InlineKeyboardMarkup([
                         [InlineKeyboardButton(f"{i}", f"{i}:{inline.query}") for i in mon],
                         [InlineKeyboardButton("Получить", callback_data=f"valute")]])
+                ),
+                InlineQueryResultArticle(
+                    title="Калькулятор",
+                    description="на кнопках",
+                    input_message_content=InputTextMessageContent(f"Калькулятор {inline.from_user.first_name}"),
+                    reply_markup=calc_btn(inline.from_user.id, "inline_")
                 )
             ],
             cache_time=1
@@ -545,14 +576,14 @@ async def answering(_, inline) -> None:
         print(str(e))
 
 
-@app.on_message(filters.command("calculator", prefix)) # калькулятор
+@app.on_message(filters.command("calculator", prefix))  # калькулятор
 async def calculate_handler(client, message):
     await message.reply(
         text=f"Калькулятор {message.from_user.first_name}",
         reply_markup=calc_btn(message.from_user.id))
 
 
-@app.on_message(filters.command("send", command_prefix)) # отправить файл с диска
+@app.on_message(filters.command("send", command_prefix))  # отправить файл с диска
 async def send_file_to_tg(client, message):
     try:
         name = message.text.split(" ", maxsplit=1)[1]
@@ -564,7 +595,7 @@ async def send_file_to_tg(client, message):
         await message.reply("some error occured")
 
 
-@app.on_message(filters.command("download", command_prefix)) # скачать файл на диск
+@app.on_message(filters.command("download", command_prefix))  # скачать файл на диск
 async def download_file_to_disk(client, message):
     try:
         target = message.reply_to_message
@@ -575,8 +606,6 @@ async def download_file_to_disk(client, message):
     except Exception as e:
         res = str(e)
     return await message.reply(res)
-
-
 
 
 @app.on_message(filters.text)

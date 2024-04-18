@@ -25,7 +25,6 @@ def translate(word, language) -> str:
             language = "en"
         result = lang[word][language].encode("cp1251").decode("utf-8")
     except KeyError as e:
-        print(type(e).__name__)
         result = "Translate error"
     return result
 

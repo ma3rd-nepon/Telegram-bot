@@ -1,4 +1,4 @@
-import requests
+from ..async_requests import Responser
 import socket
 
 mon = {
@@ -10,9 +10,11 @@ mon = {
     "KZT": "🇰🇿",
 }
 
+requests = Responser()
 
-def location(ip: str):
-    result = requests.get(
+
+async def location(ip: str):
+    result = await requests.get(
         f"http://ip-api.com/json/{socket.gethostbyname(ip)}?fields=query,reverse,countryCode,country,regionName,city,zip,lat,lon,timezone,org,as,asname,isp&lang=ru").json()
     text = f'''
 IP: {result["query"]}
@@ -84,8 +86,8 @@ Title: {message.chat.title}
 #     return string
 
 
-def weather(query):
-    weather = requests.get('http://api.openweathermap.org/data/2.5/weather',
+async def weather(query):
+    weather = await requests.get('http://api.openweathermap.org/data/2.5/weather',
                            params={'lang': 'ru', 'units': 'metric', 'APPID': '02048c30539276ca0aaca33944aa39c1',
                                    'q': query}).json()
     text = f'''
@@ -100,9 +102,9 @@ def weather(query):
     return text
 
 
-def course(query, coff=1):
+async def course(query, coff=1):
     string = f"Курс валюты {query}\n"
-    response = requests.get(f"https://api.exchangerate-api.com/v4/latest/{query}").json()
+    response = await requests.get(f"https://api.exchangerate-api.com/v4/latest/{query}").json()
     for i in mon:
         string += f"{round(response['rates'][i] * coff, 4)} {i}{mon[i]}\n"
     if query not in mon:
