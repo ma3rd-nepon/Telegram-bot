@@ -577,14 +577,14 @@ async def answering(_, inline) -> None:
 
 
 @app.on_message(filters.command("calculator", prefix))  # калькулятор
-async def calculate_handler(client, message):
+async def calculate_handler(_, message):
     await message.reply(
         text=f"Калькулятор {message.from_user.first_name}",
         reply_markup=calc_btn(message.from_user.id))
 
 
 @app.on_message(filters.command("send", command_prefix))  # отправить файл с диска
-async def send_file_to_tg(client, message):
+async def send_file_to_tg(_, message):
     try:
         name = message.text.split(" ", maxsplit=1)[1]
         if ".env" in name or 'main.py' in name:
@@ -596,7 +596,7 @@ async def send_file_to_tg(client, message):
 
 
 @app.on_message(filters.command("download", command_prefix))  # скачать файл на диск
-async def download_file_to_disk(client, message):
+async def download_file_to_disk(_, message):
     try:
         target = message.reply_to_message
         if target is None:
@@ -610,7 +610,7 @@ async def download_file_to_disk(client, message):
 
 @app.on_message(filters.text)
 @app.on_edited_message(filters.text)
-async def run_code(client, message) -> None:
+async def run_code(_, message) -> None:
     if message.text.startswith("!"):
         text = message.text.split(" ", maxsplit=1)
         lang = str(text[0][1:])
