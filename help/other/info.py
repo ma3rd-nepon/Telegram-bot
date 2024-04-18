@@ -1,4 +1,4 @@
-from ..async_requests import Responser
+import requests
 import socket
 
 mon = {
@@ -10,12 +10,11 @@ mon = {
     "KZT": "🇰🇿",
 }
 
-requests = Responser()
 
-
-async def location(ip: str):
-    result = await requests.get(
-        f"http://ip-api.com/json/{socket.gethostbyname(ip)}?fields=query,reverse,countryCode,country,regionName,city,zip,lat,lon,timezone,org,as,asname,isp&lang=ru").json()
+def location(ip: str):
+    result = requests.get(
+        f"http://ip-api.com/json/{socket.gethostbyname(ip)}?fields=query,reverse,countryCode,country,regionName,city,"
+        f"zip,lat,lon,timezone,org,as,asname,isp&lang=ru").json()
     text = f'''
 IP: {result["query"]}
 Хост: {result["reverse"]}
@@ -86,25 +85,25 @@ Title: {message.chat.title}
 #     return string
 
 
-async def weather(query):
-    weather = await requests.get('http://api.openweathermap.org/data/2.5/weather',
-                           params={'lang': 'ru', 'units': 'metric', 'APPID': '02048c30539276ca0aaca33944aa39c1',
-                                   'q': query}).json()
+def weather(query):
+    _weather = requests.get('http://api.openweathermap.org/data/2.5/weather',
+                            params={'lang': 'ru', 'units': 'metric', 'APPID': '02048c30539276ca0aaca33944aa39c1',
+                                    'q': query}).json()
     text = f'''
-Погода в {weather["name"]}:
-Температура: {round(weather["main"]["temp"], 2)} °C
-Ощущается как: {round(weather["main"]["feels_like"], 2)} °C
-Скорость ветра: {weather["wind"]["speed"]} м/с
-Влажность: {weather["main"]["humidity"]}%
-Состояние: {weather["weather"][0]["description"]}
-Давление: {round(float(weather['main']['pressure']) / 1000 * 750.06, 2)} мм рт. ст.
+Погода в {_weather["name"]}:
+Температура: {round(_weather["main"]["temp"], 2)} °C
+Ощущается как: {round(_weather["main"]["feels_like"], 2)} °C
+Скорость ветра: {_weather["wind"]["speed"]} м/с
+Влажность: {_weather["main"]["humidity"]}%
+Состояние: {_weather["weather"][0]["description"]}
+Давление: {round(float(_weather['main']['pressure']) / 1000 * 750.06, 2)} мм рт. ст.
     '''
     return text
 
 
-async def course(query, coff=1):
+def course(query, coff=1):
     string = f"Курс валюты {query}\n"
-    response = await requests.get(f"https://api.exchangerate-api.com/v4/latest/{query}").json()
+    response = requests.get(f"https://api.exchangerate-api.com/v4/latest/{query}").json()
     for i in mon:
         string += f"{round(response['rates'][i] * coff, 4)} {i}{mon[i]}\n"
     if query not in mon:

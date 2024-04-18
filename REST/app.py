@@ -62,7 +62,7 @@ def check_profile():
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
     if user_id is not None:
-        data = db_sess.query(User).filter(User.id == user_id).first().dict()
+        data = db_sess.query(User).filter(User.id == user_id).first().to_dict(rules=('-hashed_password', '-special_api'))
         data["auth"] = True
         data["bio"] = profiles_bio[int(data.get("position"))]
     else:
@@ -188,13 +188,13 @@ def users_list():
                 dictionary = dict()
                 user = db_sess.query(User).all()
                 for u in user:
-                    dictionary[user.index(u)] = u.dict()
+                    dictionary[user.index(u)] = u.to_dict(rules=('-hashed_password', '-special_api'))
 
             elif type_of_list == "bot":
                 dictionary = dict()
                 user = db_sess.query(BotUser).all()
                 for u in user:
-                    dictionary[user.index(u)] = u.dict()
+                    dictionary[user.index(u)] = u.to_dict(rules=("-skey", '-modify_date'))
 
             elif type_of_list == "user":
                 token = request.args.get("token")
@@ -202,13 +202,14 @@ def users_list():
 
                 if telegram_id is not None:
                     try:
-                        dictionary = db_sess.query(BotUser).filter(BotUser.telegram_id == telegram_id).first().dict()
+                        dictionary = db_sess.query(BotUser).filter(BotUser.telegram_id == telegram_id).first().to_dict(rules=("-skey", '-modify_date'))
                     except Exception as e:
                         dictionary = {"error": str(e)}
 
                 elif token is not None:
                     try:
-                        dictionary = db_sess.query(User).filter(User.special_api == token).first().dict()
+                        dictionary = db_sess.query(User).filter(User.special_api == token).first().to_dict(
+                            rules=('-hashed_password', '-special_api'))
                     except Exception as e:
                         dictionary = {"error": str(e)}
 

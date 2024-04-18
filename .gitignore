@@ -9,3 +9,4 @@ test-pyrogram-bot.session-shm
 test-pyrogram-bot.session-wal
 .pyc
 __pycache__
+.idea/

@@ -140,6 +140,7 @@ async def search_photo(query):
     except Exception as e:
         return str(e)
 
+
 def evaluate(primer):
     try:
         return float(eval(primer))

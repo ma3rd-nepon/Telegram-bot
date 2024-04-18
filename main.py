@@ -261,7 +261,7 @@ async def get_course(_, message) -> None:
                 count = 1
         else:
             val, count = 'usd', 1
-        result = await course(val.upper(), count)
+        result = course(val.upper(), count)
     except Exception as e:
         result = translate("course_error", user_language)
     await message.reply(result)
@@ -271,8 +271,8 @@ async def get_course(_, message) -> None:
 async def get_ip_location(_, message) -> None:
     user_language = message.from_user.language_code
     try:
-        result = await location(message.text[4:])
-    except Exception as e:
+        result = location(message.text[4:])
+    except Exception:
         result = translate("wrong_com", user_language)
     await message.reply(result)
 
@@ -280,7 +280,7 @@ async def get_ip_location(_, message) -> None:
 @app.on_message(filters.command("погода", prefix))  # узнать погоду в городе
 async def get_weather(_, message) -> None:
     try:
-        result = await weather(message.text[8:])
+        result = weather(message.text[8:])
     except:
         result = "Неправильно написан город либо его несуществует"
     await message.reply(result)
