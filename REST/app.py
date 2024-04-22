@@ -157,8 +157,8 @@ def tgidset():
             db_sess.query(User).filter(User.id == current_user.id).update(
                 {"telegram_id": int(form.telegram_id.data)})
             db_sess.commit()
-            raise WindowsError(result)
-        except (ValueError, WindowsError) as e:
+            raise ZeroDivisionError(result)
+        except (ValueError, ZeroDivisionError) as e:
             name = type(e).__name__
             if name == "ValueError":
                 message = "Напишите числовое значение ID, без букв"
@@ -293,7 +293,7 @@ def logout():
 
 
 def main():
-    db_session.global_init("db/database.db")
+    db_session.global_init("mysite/db/database.db")
 
     db_sess = db_session.create_session()
     db_sess.commit()
@@ -308,8 +308,3 @@ def main():
     # user.set_password("no_iii12345")
     # db_sess.add(user)
     # db_sess.commit()
-
-    app.run()
-
-
-main()
