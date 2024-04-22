@@ -166,11 +166,21 @@ async def show_profile(_, message) -> None:
     user_id = message.from_user.id
     user = await get_user(message)
     result = f"""
-Имя - {user['name']}
-Зарегистрирован на сайте - {user['registered']}
-Статус в боте - {user['status']}
-Телеграм ID - {user['telegram_id']}
+Имя - {user.get("bot").get('name')}
+Зарегистрирован на сайте - {user.get("bot").get('registered')}
+Статус в боте - {user.get('bot').get('status')}
+Телеграм ID - {user.get('bot').get('telegram_id')}
     """
+    {'bot': {'id': 1, 'language': 'ru', 'name': 'mærd', 'registered': 0, 'status': 'user', 'telegram_id': 1242755674}, 
+    'site': {'email': 'amidfox85@gmail.com', 'id': 1, 'modify_date': 'Mon, 22 Apr 2024 13:13:17 GMT', 'name': 'ivan', 'position': 1, 'surname': 'aboba', 'telegram_id': 1242755674}}
+    if user.get("site"):
+        result += f"""
+    Информация по сайт аккаунту
+Емаил - {user['site'].get("email")}
+Имя - {user['site'].get("name")}
+Фамилия - {user['site'].get("surname")}
+        """
+
     await message.reply(result)
 
 
@@ -305,15 +315,22 @@ async def catch_callbacks(_, callback) -> None:
         await main_settings(callback.message, send=False, callback=callback)
 
     elif "site" in callback.data:
-        await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,
-                                    text="Настройки сайта", reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton('Найти свою страницу', callback_data="search_logined_account")],
-                [InlineKeyboardButton('Редактировать данные', callback_data="site_userdata")],
-                [InlineKeyboardButton("Назад", callback_data="to_main")]
-            ]))
+        buttons = []
+        if (await get_user(callback)).get("site"):
+            buttons.append([InlineKeyboardButton('Отвязать аккаунты', callback_data="delete_relationship")])
 
-    elif "search_logined_account" in callback.data:
-        await callback.message.reply('потом')
+        buttons.append([InlineKeyboardButton("Назад", callback_data="to_main")])
+
+        await app.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,
+                                    text="Настройки сайта", reply_markup=InlineKeyboardMarkup(buttons))
+
+    elif "delete_relationship" in callback.data:
+        editing = await edit_user(data={"site": {"telegram_id": 0}}, user_id=callback.from_user.id)
+        if editing:
+            result = "успешно"
+        else:
+            result = "неполучилось"
+        await callback.message.reply(result)
 
     elif "promote" in callback.data:
         await callback.message.reply("Ожидайте ответа сервера...")
@@ -608,6 +625,11 @@ async def download_file_to_disk(_, message):
     return await message.reply(res)
 
 
+@app.on_message(filters.command("mute", prefix))
+async def mute_user(_, message):
+    pass
+
+
 @app.on_message(filters.text)
 @app.on_edited_message(filters.text)
 async def run_code(_, message) -> None:
@@ -629,7 +651,6 @@ async def run_code(_, message) -> None:
             await message.reply("no output")
         return
     return
-
 
 print("bot started")
 app.run()

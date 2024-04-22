@@ -56,7 +56,7 @@ async def get_user(message) -> dict:
     """Get user from DB"""
     user_id = message.from_user.id
     response = await requests.get(f"{url}/users", params={"type": "user", "telegram_id": f"{user_id}"})
-    if response.json().get("error") is None:
+    if response.json().get("bot") != {}:
         user = response.json()
     else:
         data = {
@@ -64,9 +64,7 @@ async def get_user(message) -> dict:
             "name": message.from_user.first_name,
         }
         resp = await add_user(data)
-        await asyncio.sleep(2)
-        user = await get_user(message)
-
+        user = data
     return user
 
 
@@ -86,12 +84,10 @@ async def get_user_by_token(token) -> dict:
     return {"error": "Not found"}
 
 
-async def edit_user(data) -> bool:
+async def edit_user(data, user_id) -> bool:
     """Edit user, True if success"""
-    response = await requests.put(f"{url}/users", json=data)
-    if response.json() == {"status": "OK"}:
-        return True
-    return False
+    response = await requests.put(f"{url}/users", json=data, params={'telegram_id': user_id})
+    return response.json() == {"status": "OK"}
 
 
 async def terminal(command) -> str:

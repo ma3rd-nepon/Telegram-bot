@@ -10,3 +10,7 @@ test-pyrogram-bot.session-wal
 .pyc
 __pycache__
 .idea/
+
+/REST/data/__pycache__/
+/REST/forms/__pycache__/
+/REST/__pycache__/

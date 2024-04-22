@@ -4,10 +4,9 @@ from sqlalchemy.orm import *
 from flask import *
 
 from data import db_session
-from data.users import User
+from data.users import User, BotUser
 from data.util import get_special_key
 from forms.user import RegisterForm, LoginForm, Profile, SetTelegramId
-from data.bot_users import BotUser
 
 import json
 import logging
@@ -62,7 +61,7 @@ def check_profile():
     db_sess = db_session.create_session()
     user_id = current_user.get_id()
     if user_id is not None:
-        data = db_sess.query(User).filter(User.id == user_id).first().to_dict(rules=('-hashed_password', '-special_api'))
+        data = db_sess.query(User).filter(User.id == user_id).first().dict()
         data["auth"] = True
         data["bio"] = profiles_bio[int(data.get("position"))]
     else:
@@ -188,35 +187,43 @@ def users_list():
                 dictionary = dict()
                 user = db_sess.query(User).all()
                 for u in user:
-                    dictionary[user.index(u)] = u.to_dict(rules=('-hashed_password', '-special_api'))
+                    dictionary[user.index(u)] = u.dict()
 
             elif type_of_list == "bot":
                 dictionary = dict()
                 user = db_sess.query(BotUser).all()
                 for u in user:
-                    dictionary[user.index(u)] = u.to_dict(rules=("-skey", '-modify_date'))
+                    dictionary[user.index(u)] = u.dict()
 
             elif type_of_list == "user":
+                dictionary = dict()
+                dictionary["errors"] = dict()
                 token = request.args.get("token")
                 telegram_id = request.args.get("telegram_id")
 
                 if telegram_id is not None:
                     try:
-                        dictionary = db_sess.query(BotUser).filter(BotUser.telegram_id == telegram_id).first().to_dict(rules=("-skey", '-modify_date'))
+                        dictionary["bot"] = db_sess.query(BotUser).filter(BotUser.telegram_id == telegram_id).first().dict()
                     except Exception as e:
-                        dictionary = {"error": str(e)}
+                        dictionary["bot"] = {}
+                        dictionary["errors"]["bot"] = {"error": str(e)}
+
+                    try:
+                        dictionary["site"] = db_sess.query(User).filter(User.telegram_id == telegram_id).first().dict()
+                    except Exception as e:
+                        dictionary["site"] = {}
+                        dictionary["errors"]["site"] = {"error": str(e)}
 
                 elif token is not None:
                     try:
-                        dictionary = db_sess.query(User).filter(User.special_api == token).first().to_dict(
-                            rules=('-hashed_password', '-special_api'))
+                        dictionary = db_sess.query(User).filter(User.special_api == token).first().dict()
                     except Exception as e:
                         dictionary = {"error": str(e)}
 
                 else:
                     dictionary = {"error": "use telegram id or token in params in URL"}
             else:
-                dictionary = {"error": "error"}
+                dictionary = {"error": {"types": ["site", "bot", "user"]}}
 
             return jsonify(dictionary)
 
@@ -244,8 +251,14 @@ def users_list():
                 return jsonify({"error": "No JSON"})
 
             try:
-                user = db_sess.query(BotUser).filter(BotUser.telegram_id == telegram_id).update(js)
-                db_sess.commit()
+                if js.get("bot"):
+                    user = db_sess.query(BotUser).filter(BotUser.telegram_id == telegram_id).update(js.get("site"))
+                    db_sess.commit()
+                elif js.get("site"):
+                    user = db_sess.query(User).filter(User.telegram_id == telegram_id).update(js.get("site"))
+                    db_sess.commit()
+                else:
+                    return jsonify({"status": "not OK"})
                 return jsonify({"status": "OK"})
             except Exception as e:
                 return jsonify({"error": str(e)})
