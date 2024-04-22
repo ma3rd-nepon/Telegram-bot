@@ -101,12 +101,24 @@ python app.py
 ~~~
 
 
+### Почему pyrogram
+
+Библиотека Pyrogram использует не традиционные HTTP Bot API. Сообщество написало свой вариант работы ботов на основе MTProto 
+
+
+[Различия MTProto и HTTP Bot API](https://github.com/LonamiWebs/Telethon/wiki/MTProto-vs-HTTP-Bot-API)
+
+
+[MTProto vs HTTP Bot API](https://docs.telethon.dev/en/stable/concepts/botapi-vs-mtproto.html)
+
+<div>
+  <img src="https://docs.pyrogram.org/_static/img/mtproto-vs-bot-api.png">
+</div>
+
+
+
 <!-- ## Ссылки
 ### [Рест сервер](https://qwertedrtvghjn.pythonanywhere.com)
 
 ### [Телеграм-Бот](https://t.me/tost_game_bot?start=start)
 -->
-
-<div>
-  <img src="https://docs.pyrogram.org/_static/img/mtproto-vs-bot-api.png">
-</div>
