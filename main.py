@@ -606,8 +606,8 @@ async def send_file_to_tg(_, message):
             return await message.reply("no")
         await app.send_document(chat_id=message.chat.id,
                                 document=name)
-    except:
-        await message.reply("some error occured")
+    except Exception as e:
+        await message.reply(f"{type(e).__name__}: {e}")
 
 
 @app.on_message(filters.command("download", command_prefix))  # скачать файл на диск

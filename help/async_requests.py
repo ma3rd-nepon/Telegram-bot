@@ -33,4 +33,8 @@ class Responser:
         self.ok = True if status == 200 else False
 
 # example
-# result = await get_response("http://127.0.0.1:5000/", "get")
+# requests = Responser()
+#
+# async def main():
+#     result = await requests.get("http://127.0.0.1:5000/")
+#     return result.json() if result.status_code == 200
