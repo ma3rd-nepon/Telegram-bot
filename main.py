@@ -171,8 +171,6 @@ async def show_profile(_, message) -> None:
 Статус в боте - {user.get('bot').get('status')}
 Телеграм ID - {user.get('bot').get('telegram_id')}
     """
-    {'bot': {'id': 1, 'language': 'ru', 'name': 'mærd', 'registered': 0, 'status': 'user', 'telegram_id': 1242755674}, 
-    'site': {'email': 'amidfox85@gmail.com', 'id': 1, 'modify_date': 'Mon, 22 Apr 2024 13:13:17 GMT', 'name': 'ivan', 'position': 1, 'surname': 'aboba', 'telegram_id': 1242755674}}
     if user.get("site"):
         result += f"""
     Информация по сайт аккаунту
@@ -327,10 +325,10 @@ async def catch_callbacks(_, callback) -> None:
     elif "delete_relationship" in callback.data:
         editing = await edit_user(data={"site": {"telegram_id": 0}}, user_id=callback.from_user.id)
         if editing:
-            result = "успешно"
+            await callback.edit_message_text(text="Аккаунты успешно отвязаные", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Назад", callback_data="to_main")]]))
         else:
             result = "неполучилось"
-        await callback.message.reply(result)
+            await callback.message.reply(result)
 
     elif "promote" in callback.data:
         await callback.message.reply("Ожидайте ответа сервера...")
