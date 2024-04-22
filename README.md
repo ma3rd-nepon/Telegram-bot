@@ -109,10 +109,11 @@ python app.py
 [Различия MTProto и HTTP Bot API](https://github.com/LonamiWebs/Telethon/wiki/MTProto-vs-HTTP-Bot-API)
 
 
-[MTProto Community Edition](https://github.com/xelaj/mtproto?tab=readme-ov-file)
-
-
 [MTProto vs HTTP Bot API](https://docs.telethon.dev/en/stable/concepts/botapi-vs-mtproto.html)
+
+<div>
+  <img src="https://docs.pyrogram.org/_static/img/mtproto-vs-bot-api.png">
+</div>
 
 
 
