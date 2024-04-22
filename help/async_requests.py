@@ -29,7 +29,7 @@ class Responser:
             self.okkk(response.status_code)
             return response
 
-    def okkk(self, status):
+    def make_status(self, status):
         self.ok = True if status == 200 else False
 
 # example

@@ -1,6 +1,18 @@
-# Информационный бот
+<div align="center">
+  <h1>Информационный бот</h1>
+  <p>
+    <strong>Мультифункциональный бот</strong>
+  </p>
+  <p>
 
-Разработка бота для Telegram, который будет выполнять вспомогательные, информационные функции.
+[![](https://img.shields.io/badge/Telegram-bot-blue?logo=telegram)](https://t.me/tost_game_bot?start=start)
+[![](https://img.shields.io/badge/A_rest-db_server-blue)](https://qwertedrtvghjn.pythonanywhere.com)
+
+  </p>
+</div>
+
+<!-- shields.io for this icons (да это я сделал) -->
+Разработка бота для Telegram, выполняющего вспомогательные и информационные функции.
 
 ## Цели проекта:
 - создание асинхронного бота
@@ -54,9 +66,43 @@
 |-file/folder - релокация файла/папки
 
 
+## Установка
+
+Нужен Python 3.11
+
+<br>
+
+Клонирование репозитория
+~~~
+git clone https://github.com/ma3rd-nepon/Telegram-bot.git
+~~~
+
+<br>
+
+Установка зависимостей
+~~~
+pip install -r requirements.txt
+~~~
+или
+~~~
+python -m pip install -r requirements.txt
+~~~
+
+<br>
+
+Запуск бота
+~~~
+python main.py
+~~~
+
+Запуск сайта с базой данных (запускать на сервере)
+~~~
+python app.py
+~~~
 
 
-## Ссылки
+<!-- ## Ссылки
 ### [Рест сервер](https://qwertedrtvghjn.pythonanywhere.com)
 
 ### [Телеграм-Бот](https://t.me/tost_game_bot?start=start)
+-->
